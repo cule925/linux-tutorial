@@ -34,7 +34,7 @@ Ako trenutno koristimo Arch Linux i želimo instalirati [Arch Linux na virtualni
 sudo pacman -S qemu-full
 ```
 
-Zatim je potrebno stvoriti direktorij *~/arch-linux-vm* i premjestiti se u njega te stvoriti virtualnu sliku diska imena *archlinux.qcow2*, formata QCOW2 i veličine 10 GiB:
+Zatim je potrebno stvoriti direktorij *~/arch-linux-vm* i premjestiti se u njega te stvoriti virtualnu sliku diska imena *archlinux.qcow2*, formata QCOW2 i veličine 20 GiB:
 
 ```
 mkdir ~/arch-linux-vm
@@ -172,7 +172,30 @@ Ovisno o tome jesmo li koristili BIOS ili UEFI tako ćemo particionirati po MBR 
 
 #### BIOS + MBR particioniranje
 
+Potrebno je stvoriti barem 1 particiju:
 
+* Linux particiju veličine cijelog diska namijenjenu za */* direktorij
+
+Obično se stvara i jedna particija za */home/* direktorij gdje će se spremati korisnički podatci. Ovo je u redu ako želimo odvojiti podatke običnih korisnika od privilegiranog *root* korisnika, ali dovodi do fragmentacije diska. Ako je disk već bio pisan nečime, potrebno je obrisati sve particije naredbom ```d```.
+
+Stvaranje nove MBR particijske sheme može se napraviti naredbom ```o```.
+
+Stvaranje nove Linux particije veličine ostatka diska može se napraviti izvršavanjem naredbi ```n```. Konfiguracija mora biti sljedeća:
+
+* vrsta particije: primarna
+* broj particije: 1
+* prvi sektor: *default*
+* zadnji sektor: *default*
+
+Vrsta particije se mijenja naredbom ```t```. Konfiguracija mora biti sljedeća:
+
+* vrsta particije: 83
+
+Ispis trenutne konfiguracije može se napraviti naredbom ```p```. Konačno, zapis promjena na disk i izlazak iz alata radi se naredbom:
+
+```
+w
+```
 
 #### UEFI + GPT particioniranje
 
@@ -218,7 +241,11 @@ Stvorenim particijama je potrebno napraviti datotečne sustave ovisno o tome koj
 
 #### BIOS + MBR formatiranje
 
+Potrebno je formatirati Linux particiju na EXT4 datotečni sustav:
 
+```
+mkfs.ext4 [datoteka uređaja koja predstavlja particiju]
+```
 
 #### UEFI + GPT formatiranje
 
@@ -240,7 +267,11 @@ Particije je potrebno montirati kako bi se mogli instalirati paketi na njima. Mo
 
 #### BIOS + MBR montiranje
 
+Potrebno je montirati particiju. Točka montiranja je direktorij */mnt*:
 
+```
+mount /dev/[particija] /mnt
+```
 
 #### UEFI + GPT montiranje
 
@@ -367,7 +398,7 @@ passwd
 
 #### Instalacija mikrokod-a (ovo ne vrijedi za virtualne strojeve)
 
-Prvo je potrebno instalirati [mikrokod](https://wiki.archlinux.org/title/Microcode) za AMD ili Intel. Mikrokod je na neki način firmware samog procesora. Tijekom stvaranja GRUB konfiguracije ona će uključiti mikrokod u */boot/* direktoriju ako postoji. Mikrokod se *ne instalira ako se Arch Linux pokreće iz virtualnog stroja*.
+Prvo je potrebno instalirati [mikrokod](https://wiki.archlinux.org/title/Microcode) za AMD ili Intel. Mikrokod je na neki način firmware samog procesora. Tijekom stvaranja GRUB konfiguracije ona će uključiti mikrokod u */boot/* direktoriju ako postoji. Mikrokod se **ne instalira ako se Arch Linux pokreće iz virtualnog stroja**.
 
 ##### Instalacija mikrokoda za AMD procesore
 
@@ -394,7 +425,17 @@ Stvorit će se datoteka */boot/intel-ucode.img*.
 
 ##### BIOS + MBR instalacija bootloader-a
 
+Za početak je potrebno preuzeti [GRUB bootloader](https://wiki.archlinux.org/title/GRUB) i alat za detektiranje drugih operacijskih sustava na diskovima:
 
+```
+pacman -S grub os-prober
+```
+
+Zatim je potrebno instalirati GRUB bootloader na disk (MBR, prostor iza MBR-a i u */boot/* direktoriju):
+
+```
+grub-install --target=i386-pc [datoteka uređaja koja predstavlja disk (ne particiju)]
+```
 
 ##### UEFI + GPT instalacija bootloader-a
 
@@ -574,10 +615,12 @@ Preporuke:
 	- dodavanje zapisa odmah ispod gore navedenih:
 		```
 		...
-		ILoveACandy
+		ILoveCandy
 		...
 		```
-- uređivanje korisnikove *.bashrc* datoteke odnosno varijable okruženja *PS1*:
+- uređivanje *prompt-a* odnosno varijable okruženja *PS1* u *.bashrc* datoteci:
+	- potrebno je dati vlastitu vrijednost varijabli *PS1* u obliku ```PS1='\[\033[01;38;2;R;G;Bm\]\u@\h:\w \$\[\033[00m\] '```
+		- *R*, *G* i *B* predstavljaju intenzitete boja, rasponi su im od 0 uključivo do 255 uključivo
 	- primjerice:
 		```
 		...
