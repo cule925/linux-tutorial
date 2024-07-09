@@ -633,7 +633,7 @@ Preporuke:
 Dodatni paketi koji bi možda bili korisni:
 	- *git* : alat za verzioniranje
 	- *htop* : interaktivni ispis trenutno aktivnih procesa
-	- *neofetch* : ispis postavki
+	- *fastfetch* : ispis informacija i sustavu
 	- *firefox* : web preglednik
 	- *ffmpeg* : alat naredbenog retka za uređivanje videa i ostale multimedije
 	- *gst-libav* : plugin za H264 codec, potreban za reprodukciju videa
@@ -654,7 +654,7 @@ Dodatni paketi koji bi možda bili korisni:
 Naredba za instalaciju svih navedenih paketa je:
 
 ```
-pacman -S git htop neofetch firefox ffmpeg gst-libav gedit man-db wget curl cmake zip unzip bluez bluez-utils usbutils lsof net-tools inetutils nmap dhclient code discord
+pacman -S git htop fastfetch firefox ffmpeg gst-libav gedit man-db wget curl cmake zip unzip bluez bluez-utils usbutils lsof net-tools inetutils nmap dhclient code discord
 ```
 
 ### Završna napomena
