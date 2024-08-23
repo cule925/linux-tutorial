@@ -8,3 +8,4 @@ Preporuča se slijediti sljedeće linkove:
 * osnovno korištenje: [ovdje](basics)
 * upravljanje servisima: [ovdje](services)
 * upravljanje mrežom: [ovdje](networking)
+* koncepti jezgre: [ovdje](kernel)
