@@ -578,7 +578,7 @@ Instalacija *closed source* upravljačkog programa za NVIDIA grafičke kartice r
 pacman -S nvidia
 ```
 
-Prilikom ponovnog pokretanja jezgreni modul *?* bi se trebao automatski učitati u jezgru. Provjera jeli se to stvarno dogodilo se može napraviti naredbom ```lspci -k | grep -A 3 -E "(VGA|3D)"```. Postoji i *open source* verzija *nouveau*, ali su performanse lošije.
+Prilikom ponovnog pokretanja jezgreni modul *nvidia* bi se trebao automatski učitati u jezgru. Provjera jeli se to stvarno dogodilo se može napraviti naredbom ```lspci -k | grep -A 3 -E "(VGA|3D)"```. Postoji i *open source* verzija *nouveau*, ali su performanse lošije.
 
 #### Instalacija X Window System-a i GNOME desktop okoline
 
