@@ -97,7 +97,7 @@ Ovakav način rada je BIOS način rada. Na tvrdom disku je potrebno koristiti MB
 
 ### TAP sučelje
 
-Kako je SLIRP način rada relativno spor zbog velikog *overhead-a*, moguće je virtualni stroj s drugim mrežnim postavkama, primjerice [TAP sučeljima](https://en.wikipedia.org/wiki/TUN/TAP) koje imaju znatno bolje performanse, ali zahtijevaju konfiguraciju na računalu domaćinu. TAP je jezgrin virtualni mrežni uređaj koji simulira mrežni uređaj koji implementira drugi sloj OSI modela odnosno sloj podatkovne poveznice. Ovo znači da TAP uređaj ima svoju MAC adresu. Kako bi spojili TAP uređaj na virtualni stroj, potrebno ga je stvoriti na računalu domaćinu naredbom:
+Kako je SLIRP način rada relativno spor zbog velikog *overheada*, moguće je virtualni stroj s drugim mrežnim postavkama, primjerice [TAP sučeljima](https://en.wikipedia.org/wiki/TUN/TAP) koje imaju znatno bolje performanse, ali zahtijevaju konfiguraciju na računalu domaćinu. TAP je jezgrin virtualni mrežni uređaj koji simulira mrežni uređaj koji implementira drugi sloj OSI modela odnosno sloj podatkovne poveznice. Ovo znači da TAP uređaj ima svoju MAC adresu. Kako bi spojili TAP uređaj na virtualni stroj, potrebno ga je stvoriti na računalu domaćinu naredbom:
 
 ```
 sudo ip tuntap add tap0 mode tap user root

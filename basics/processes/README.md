@@ -216,7 +216,7 @@ Moderni operacijski sustavi omogućuju pokretanje više dretvi na jednom računa
 
 ### Stanja dretvi
 
-U jednoprocesorskom sustavu samo se jedna dretva može izvoditi dok ostale moraju čekati na svoj red. Stoga, moguća [stanja dretvi](https://www.baeldung.com/linux/process-states) u Linux-u su:
+U jednoprocesorskom sustavu samo se jedna dretva može izvoditi dok ostale moraju čekati na svoj red. Stoga, moguća [stanja dretvi](https://www.baeldung.com/linux/process-states) u Linuxu su:
 
 - *Running*
 	- dretva se izvodi na procesoru
@@ -358,7 +358,7 @@ bg [JID]
 
 ## Inter-procesna komunikacija
 
-Inter-procesna komunikacija je mehanizam komunikacije između dva procesa. Postoji nekoliko načina inter-procesne komunikacije u Linux-u:
+Inter-procesna komunikacija je mehanizam komunikacije između dva procesa. Postoji nekoliko načina inter-procesne komunikacije u Linuxu:
 
 - cjevovod
 	- FIFO (*eng. First In First Out*) red
@@ -376,7 +376,7 @@ Inter-procesna komunikacija je mehanizam komunikacije između dva procesa. Posto
 
 ### Opisnik datoteke
 
-Opisnik datoteke je broj koji predstavlja zapis trenutno otvorene datoteke koji sadrži informacije gdje se nalaze memorijski segmenti koji reprezentiraju tu datoteku. Svaki proces koji ima otvorene datoteke ima niz takvih zapisa i broj odnosno opisnik datoteke asociran s njim. Svaki proces u Linux-u pri pokretanju ima automatski otvorena već tri opisnika:
+Opisnik datoteke je broj koji predstavlja zapis trenutno otvorene datoteke koji sadrži informacije gdje se nalaze memorijski segmenti koji reprezentiraju tu datoteku. Svaki proces koji ima otvorene datoteke ima niz takvih zapisa i broj odnosno opisnik datoteke asociran s njim. Svaki proces u Linuxu pri pokretanju ima automatski otvorena već tri opisnika:
 
 * STDIN predstavljen s 0
 * STDOUT predstavljen s 1
@@ -426,7 +426,7 @@ Datoteka uređaja koja je otvorena je zapravo naš pseudoterminal iz kojeg smo p
 
 Signal je način komunikacije između procesa. Linux jezgra prosljeđuje signale određenim procesima. Pojava signala izaziva prekid u radu procesa kojem je namijenjen signal. Taj proces može obraditi signal nekom *handler* funkcijom, a ako *handler* funkcija nije zadana izvršava se neka zadana funkcija ili se signal jednostavno ignorira. Nakon obrade *handler* funkcije proces nastavlja s radom gdje je bio prekinut, osim ako nije bio poslan signal za okončanje rada.
 
-Za C programe u Linux-u postoji biblioteka za pisanje vlastitih signal *handler* funkcija *signal.h*, primjer programa gdje se koristi:
+Za C programe u Linuxu postoji biblioteka za pisanje vlastitih signal *handler* funkcija *signal.h*, primjer programa gdje se koristi:
 
 ```
 #include <stdio.h>
@@ -477,7 +477,7 @@ Neimenovani cjevovod je FIFO red kojem proces roditelj i proces dijete mogu komu
 * roditelj zatim stvara procese djecu
 * obično je komunikacija cjevovodima jednosmjerna pa roditelj zatvara opisnik za čitanje iz cjevovoda, a dijete zatvara opisnik za pisanje (roditelj šalje djetetu) ili roditelj zatvara opisnik za pisanje, a dijete opisnik za čitanje (dijete šalje roditelju)
 
-Primjer C programa u Linux-u koji koristi neimenovane cjevovode radi komunikacije između dva procesa gdje je jedan roditelj a drugi dijete:
+Primjer C programa u Linuxu koji koristi neimenovane cjevovode radi komunikacije između dva procesa gdje je jedan roditelj a drugi dijete:
 
 ```
 #include <stdio.h>

@@ -1,6 +1,6 @@
 # SYSTEMD
 
-Skup programa [systemd](https://wiki.archlinux.org/title/systemd) je skup alata za upravljanje sustavom i servisima. Servisi, u kontekstu *systemd-a* poznati još kao i *daemon-i*, su programi koji su pokrenuti u pozadini. Neki od alata koje nam nudi *systemd* su:
+Skup programa [systemd](https://wiki.archlinux.org/title/systemd) je skup alata za upravljanje sustavom i servisima. Servisi, u kontekstu *systemda* poznati još kao i *daemon-i*, su programi koji su pokrenuti u pozadini. Neki od alata koje nam nudi *systemd* su:
 
 * systemctl - upravljanje servisima sustava
 * hostnamectl - postavljanje imena sustava
@@ -9,12 +9,12 @@ Skup programa [systemd](https://wiki.archlinux.org/title/systemd) je skup alata 
 
 Za distribucije koje koriste skup alata *systemd* proces *systemd* je prvi proces koja Linux jezgra pokreće nakon što se učita u RAM (ID procesa je 1). Proces koji se prvi pokreće nakon učitavanja Linux jezgre u RAM se zove [*init*](https://wiki.archlinux.org/title/init) proces (inicijalni proces).
 
-## Upravljanje sustavom uz pomoć systemd-a
+## Upravljanje sustavom uz pomoć systemda
 
 Objekt kojim upravlja *systemd* naziva se *Unit* te su oni opisani uz pomoć Unit datoteka. Upravljanje *Unit-ima* se radi uz pomoć *systemctl* alata. Par korisnih naredbi su:
 
 - ```systemctl status [Unit datoteka]```
-	- ispisuje status *Unit-a*
+	- ispisuje status *Unita*
 - ```systemctl start [Unit datoteka]```
 	- pokreće Unit
 - ```systemctl stop [Unit datoteka]```
@@ -22,7 +22,7 @@ Objekt kojim upravlja *systemd* naziva se *Unit* te su oni opisani uz pomoć Uni
 - ```systemctl restart [Unit datoteka]```
 	- ponovno pokreće Unit
 - ```systemctl reload [Unit datoteka]```
-	- ponovno učitava konfiguraciju aplikacije *Unit-a* ako je to moguće
+	- ponovno učitava konfiguraciju aplikacije *Unita* ako je to moguće
 - ```systemctl enable [Unit datoteka]```
 	- omogućuje Unit odnosno stvara simboličku poveznicu na njega
 - ```systemctl disable [Unit datoteka]```
@@ -51,7 +51,7 @@ Simboličke poveznice na neke od ovih naredbi su već napravljene tako da ih je 
 
 ### Unit datoteke
 
-[Unit datoteke](https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files) predstavljaju objekte kojima odnosno *Unit-e* kojima upravlja *systemd*. Postoji par vrsta *Unit-a* odnosno Unit datoteka koji ih opisuju. Neke od tih vrsta su:
+[Unit datoteke](https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files) predstavljaju objekte kojima odnosno *Unite* kojima upravlja *systemd*. Postoji par vrsta *Unita* odnosno Unit datoteka koji ih opisuju. Neke od tih vrsta su:
 
 - *service*
 	- opisuje kako upravljati servisom
@@ -59,7 +59,7 @@ Simboličke poveznice na neke od ovih naredbi su već napravljene tako da ih je 
 - *socket*
 	- opisuje mrežni priključak ili priključak za međuprocesnu komunikaciju (*eng. IPC - Inter Process Communication*)
 - *device*
-	- opisuje uređaj koji je upravljan uz pomoć [*udev*](https://wiki.archlinux.org/title/udev) upravljača uređaja koji je dio *systemd-a*
+	- opisuje uređaj koji je upravljan uz pomoć [*udev*](https://wiki.archlinux.org/title/udev) upravljača uređaja koji je dio *systemda*
 - *mount*
 	- definira točku montiranja kojem će upravljati *systemd*
 	- zapise u */etc/fstab* sustav *systemd* automatski montira pri svakom pokretanju sustava
@@ -67,15 +67,15 @@ Simboličke poveznice na neke od ovih naredbi su već napravljene tako da ih je 
 	- pruža sinkronizacijske točke za druge Unit datoteke
 	- *systemd* dolazi s uobičajenim ciljevima koji predstavljaju razine pokretanja (*eng. runlevels*)
 - *timer*
-	- definira vremenski brojač (*eng. timer*) koji će biti upravljan *systemd-om*
+	- definira vremenski brojač (*eng. timer*) koji će biti upravljan *systemdom*
 - *slice*
 	- koristi se za Linux kontrolne grupe
 
-Unit datoteke u imenu imaju nastavak vrstu *Unit-a* kojeg predstavljaju (primjerice *.service*, *.target*, ...).
+Unit datoteke u imenu imaju nastavak vrstu *Unita* kojeg predstavljaju (primjerice *.service*, *.target*, ...).
 
 ### Razine pokretanja
 
-Razina pokretanja (*eng. runlevel*) je način rada operacijskog sustava računala. Okruženje *systemd-a* nudi par takvih razina koji se ovdje nazivaju ciljevima (*eng. target*) i predstavljeni su Unit datotekama. Ciljevi služe za grupiranje Unit datoteka i njihovih ovisnosti te služe kao sinkronizacijske točke. Najbitniji ciljevi su:
+Razina pokretanja (*eng. runlevel*) je način rada operacijskog sustava računala. Okruženje *systemda* nudi par takvih razina koji se ovdje nazivaju ciljevima (*eng. target*) i predstavljeni su Unit datotekama. Ciljevi služe za grupiranje Unit datoteka i njihovih ovisnosti te služe kao sinkronizacijske točke. Najbitniji ciljevi su:
 
 - *poweroff.target*
 	- zaustavlja sustav
@@ -90,7 +90,7 @@ Razina pokretanja (*eng. runlevel*) je način rada operacijskog sustava računal
 - *emergency.target*
 	- način rada koji pokreće ljusku za hitne slučajeve
 
-Ciljevi su predstavljeni Unit datotekama s nastavkom *.target*. Prilikom pokretanja *systemd-a* sustav ima postavljen uobičajeni cilj (*eng. default target*) koji specificira koju grupu servisa treba pokrenuti. Ako se želi saznati koji je uobičajeni cilj to se može učiniti naredbom:
+Ciljevi su predstavljeni Unit datotekama s nastavkom *.target*. Prilikom pokretanja *systemda* sustav ima postavljen uobičajeni cilj (*eng. default target*) koji specificira koju grupu servisa treba pokrenuti. Ako se želi saznati koji je uobičajeni cilj to se može učiniti naredbom:
 
 ```
 systemctl get-default
@@ -130,19 +130,19 @@ Prva sekcija u većini Unit datoteka je sekcija ```[Unit]``` koja definira metap
 - *Documentation=*
 	- URI za dokumentaciju
 - *Requires=*
-	- drugi izlistani *Unit-i* o kojem ovaj Unit ovisi
-	- Unit-i **moraju** biti zajedno pokrenuti
+	- drugi izlistani *Uniti* o kojem ovaj Unit ovisi
+	- Uniti **moraju** biti zajedno pokrenuti
 - *Wants=*
-	- slično kao *Requires*, ali ako izlistani *Unit-i* ne započnu s radom ovaj Unit će svejedno započeti s radom
-	- **preferirano** je da *Unit-i* budu zajedno pokrenuti ali **nije nužno**
+	- slično kao *Requires*, ali ako izlistani *Uniti* ne započnu s radom ovaj Unit će svejedno započeti s radom
+	- **preferirano** je da *Uniti* budu zajedno pokrenuti ali **nije nužno**
 - *BindsTo=*
-	- slično kao *Requires*, ali omogućuje zaustavljanje Unit-a ako se zaustavi jedan od izlistanih *Unit-a*
+	- slično kao *Requires*, ali omogućuje zaustavljanje Unita ako se zaustavi jedan od izlistanih *Unita*
 - *Before=*
-	- izlistani *Unit-i* neće započinjati s radom dok se ne pokrene trenutni *Unit*, ova direktiva definira **eksplicitni redoslijed pokretanja**
+	- izlistani *Uniti* neće započinjati s radom dok se ne pokrene trenutni *Unit*, ova direktiva definira **eksplicitni redoslijed pokretanja**
 - *After=*
-	- trenutni *Unit* neće započeti s radom dok ne započnu svi izlistani *Unit-i*, ova direktiva definira **eksplicitni redoslijed pokretanja**
+	- trenutni *Unit* neće započeti s radom dok ne započnu svi izlistani *Uniti*, ova direktiva definira **eksplicitni redoslijed pokretanja**
 - *Conflicts=*
-	- lista *Unit-a* koji ne mogu biti pokrenuti istovremeno s trenutnim *Unit-om*
+	- lista *Unita* koji ne mogu biti pokrenuti istovremeno s trenutnim *Unitom*
 
 Više o direktivama za sekciju ```[Unit]``` može se naći [ovdje](https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html).
 
@@ -152,10 +152,10 @@ Zadnja sekcija u većini Unit datoteka je sekcija ```[Install]``` koja definira 
 
 - *RequiredBy=*
 	- u direktoriju /etc/systemd/system/* stvara (ako već nije stvorio) direktorij [vrijednost].requires u kojem će stvoriti simboličku poveznicu na trenutnu Unit datoteku
-	- vrijedi pravilo da se trenutni *Unit* **mora** pokrenuti s navedenom listom drugih *Unit-a*
+	- vrijedi pravilo da se trenutni *Unit* **mora** pokrenuti s navedenom listom drugih *Unita*
 - *WantedBy=*
 	- u direktoriju /etc/systemd/system/* stvara (ako već nije stvorio) direktorij [vrijednost].wants u kojem će stvoriti simboličku poveznicu na trenutnu Unit datoteku
-	- vrijedi pravilo da se **preferira** pokretanje trenutnog *Unit-a* s *Unit-ima* navedenim u listi, ali **nije nužno**
+	- vrijedi pravilo da se **preferira** pokretanje trenutnog *Unita* s *Unitima* navedenim u listi, ali **nije nužno**
 	- recimo da je u nekoj Unit datoteci postavljena direktiva na ovaj način *WantedBy=multi-user.target.wants*:
 		- u direktoriju */etc/systemd/system/* stvorit će se direktorij *multi-user.target.wants* (ako već nije) i u njemu će se stvoriti simbolička poveznica na trenutnu Unit datoteku
 		- ovo znači da će se trenutna Unit datoteka pokušati pokrenuti kada se želi doseći cilj *multi-user.target* ako je tako postavljen uobičajeni cilj
@@ -256,7 +256,7 @@ Naredba će pokrenuti naredbu koja je navedena u direktivi *ExecReload*. Ako se 
 systemctl enable EchoDate.service
 ```
 
-Nakon svakog ponovnog pokretanja računala izvršit će se naredba pod *ExecStart=* direktivom. Ako se servis želi u potpunosti ukloniti potrebno je prvo zaustaviti servis, onemogućiti ga i izbrisati mu *Unit* datoteku, ponovno učitati konfiguraciju u *systemd* i resetirati stanja drugih Unit-a kojima su se možda dogodile greške zbog nestanka Unit datoteke koja im je možda ovisnosti (ovo se neće dogoditi u ovom slučaju). To se radi nizom naredbi:
+Nakon svakog ponovnog pokretanja računala izvršit će se naredba pod *ExecStart=* direktivom. Ako se servis želi u potpunosti ukloniti potrebno je prvo zaustaviti servis, onemogućiti ga i izbrisati mu *Unit* datoteku, ponovno učitati konfiguraciju u *systemd* i resetirati stanja drugih Unita kojima su se možda dogodile greške zbog nestanka Unit datoteke koja im je možda ovisnosti (ovo se neće dogoditi u ovom slučaju). To se radi nizom naredbi:
 
 ```
 systemctl stop EchoDate.service

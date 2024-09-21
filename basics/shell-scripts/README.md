@@ -14,7 +14,7 @@ Pokretanje datoteke koja se nalazi u trenutnom direktoriju radi se naredbom:
 
 ## Osnovni pojmovi skripte ljuske
 
-Najkorištenija ljuska u Linux-u je **bash** pa ćemo nju koristiti. Prvi redak u skripti ljuske bi trebao reći koju ljusku koristiti za izvršavanje skripte. Ovo će omogućiti izvršavanje skripte u ljuski za koju je napisana iako se pokreće iz neke druge ljuske. Dakle, prvi redak bi trebao započinjati tzv. [shebang-om](https://www.geeksforgeeks.org/how-to-create-a-shell-script-in-linux/?ref=lbp) odnosno *#!* i onda putanjom do ljuske. Primjerice ako je skripta napisana za bash:
+Najkorištenija ljuska u Linuxu je **bash** pa ćemo nju koristiti. Prvi redak u skripti ljuske bi trebao reći koju ljusku koristiti za izvršavanje skripte. Ovo će omogućiti izvršavanje skripte u ljuski za koju je napisana iako se pokreće iz neke druge ljuske. Dakle, prvi redak bi trebao započinjati tzv. [shebangom](https://www.geeksforgeeks.org/how-to-create-a-shell-script-in-linux/?ref=lbp) odnosno *#!* i onda putanjom do ljuske. Primjerice ako je skripta napisana za bash:
 
 ```
 #!/bin/bash

@@ -8,7 +8,7 @@ Ovo su upute za instalaciju pojedinih Linux distribucija. Upute su sljedeće:
 
 [BIOS (Basic Input Output System)](https://en.wikipedia.org/wiki/BIOS) je firmware najčešće ugrađen u matičnu ploču računala. Pruža servise za inicijalizaciju sklopovlja računala. Prilikom pokretanja računala vrši inicijalizaciju hardvera i POST (*eng. Power On Self Test*) koji provjerava ispravnost komponenata. Nakon toga započinje proces podizanja sustava (*eng. Boot process*) gdje BIOS pokušava locirati sekundarnu pohranu (NVME, SSD, HDD, USB...) koja u svom prvom logičkom sektoru veličine 512 bajtova sadrži MBR (*eng. Master Boot Record*). Sekundarne pohrane su poredane po prioritetima i BIOS će nastaviti pretraživati uređaje sve dok ne naiđe na MBR zapis. MBR se prepoznaje po tome što u prvom sektoru na zadnja dva bajta ima zapis 0x55 0xAA. Nakon toga se MBR zapis učitava u RAM i započinje se izvršavanje x86 koda u MBR zapisu, to je program koji učitava kod s particije koja je označena s *bootable*. Takva particija sadrži *bootloader* ili jezgru OS-a. BIOS je poprilično star i u svim novijim računalima zamijenio ga je UEFI.
 
-[UEFI (Unified Extensible Firmware Interface) Specification](https://uefi.org/specs/UEFI/2.10/01_Introduction.html) definira sučelje između operacijskog sučelja i firmware-a platforme. Platforma mora implementirati specifikaciju kako bi se kvalificirala kao UEFI. Prilikom pokretanja sustava UEFI također inicijalizira hardver i provjerava ispravnost komponenti. Zatim pretražuje EFI particije na sekundarnim pohranama i učitava *bootloader* u RAM gdje se onda može učitati OS po želji. Shema particioniranja može biti MBR ili GPT, bitno je samo da postoji barem jedna EFI sistemska particija (ESP) na disku koja sadrži *bootloader*. Za razliku od BIOS-a, x86 kod u MBR-u se ne izvršava kod UEFI-a.
+[UEFI (Unified Extensible Firmware Interface) Specification](https://uefi.org/specs/UEFI/2.10/01_Introduction.html) definira sučelje između operacijskog sučelja i firmwarea platforme. Platforma mora implementirati specifikaciju kako bi se kvalificirala kao UEFI. Prilikom pokretanja sustava UEFI također inicijalizira hardver i provjerava ispravnost komponenti. Zatim pretražuje EFI particije na sekundarnim pohranama i učitava *bootloader* u RAM gdje se onda može učitati OS po želji. Shema particioniranja može biti MBR ili GPT, bitno je samo da postoji barem jedna EFI sistemska particija (ESP) na disku koja sadrži *bootloader*. Za razliku od BIOS-a, x86 kod u MBR-u se ne izvršava kod UEFI-a.
 
 ## Sheme particioniranja, MBR i GPT?
 
@@ -128,31 +128,31 @@ Noviji datotečni sustav je [*EXT4*](https://ext4.wiki.kernel.org/index.php/Ext4
 Jednostavnije:
 
 ```
-   PARTICIJA P2     | slobodnih 1024 bajtova | superblok | opisnici grupa blokova | bitmape grupe blokova | bitmape inode-ova | inode-ovi (inode tablica) | grupe blokova |
+   PARTICIJA P2     | slobodnih 1024 bajtova | superblok | opisnici grupa blokova | bitmape grupe blokova | bitmape inodeova | inodeovi (inode tablica) | grupe blokova |
 ```
 
 Postoji još par [podatkovnih struktura u *EXT4* datotečnom sustavu](https://blogs.oracle.com/linux/post/understanding-ext4-disk-layout-part-2), ali se u njih neće ulaziti.
 
-Superblok sadrži bitne informacije, primjerice broj *inode-ova*, broj blokova, jeli datotečni sustav montiran i slično. Superblok se radi redundancije kopira na par mjesta u blok grupama. Blok deskriptori pokazuju na bitmape *inode-ova* i blokova te na početak *inode* tablice. Bitmape grupe blokova i bitmape *inode-ova* pokazuju na zauzetost blokova odnosno *inode-ova*. Konačno, jedan *inode* se zauzima odnosno oslobađa prilikom stvaranja odnosno brisanja datoteke te sadrži sve metapodatke vezanu uz tu datoteku (vremensku oznaku, razne atribute...) te pokazivače na blokove u blok grupama koje sadrže podatke. *EXT4* datotečni sustav ima fiksiran broj *inode-ova* što znači da se može dogoditi problem iscrpljenja *inode-ova* ako se stvara mnogo malih datoteka odnosno ne bi više mogli stvarati datoteke jer smo iskoristili sve *inode-ove* iako ima još slobodnog prostora za podatke odnosno nisu zauzeti svi blokovi u blok grupama. Jedan *inode* sigurno sadrži sljedeće:
+Superblok sadrži bitne informacije, primjerice broj *inodeova*, broj blokova, jeli datotečni sustav montiran i slično. Superblok se radi redundancije kopira na par mjesta u blok grupama. Blok deskriptori pokazuju na bitmape *inodeova* i blokova te na početak *inode* tablice. Bitmape grupe blokova i bitmape *inodeova* pokazuju na zauzetost blokova odnosno *inodeova*. Konačno, jedan *inode* se zauzima odnosno oslobađa prilikom stvaranja odnosno brisanja datoteke te sadrži sve metapodatke vezanu uz tu datoteku (vremensku oznaku, razne atribute...) te pokazivače na blokove u blok grupama koje sadrže podatke. *EXT4* datotečni sustav ima fiksiran broj *inodeova* što znači da se može dogoditi problem iscrpljenja *inodeova* ako se stvara mnogo malih datoteka odnosno ne bi više mogli stvarati datoteke jer smo iskoristili sve *inodeove* iako ima još slobodnog prostora za podatke odnosno nisu zauzeti svi blokovi u blok grupama. Jedan *inode* sigurno sadrži sljedeće:
 
 * ID korisnika i grupe
 * vrsta datoteke (čista datoteka, direktorij, ...)
 * dopuštenja (čitanja, pisanja, uređivanja - rwx)
 * vrijeme pristupa datoteci i vrijeme uređenja datoteke
-* vrijeme uređenja ovog *inode-a* i vrijeme brisanja datoteke
+* vrijeme uređenja ovog *inodea* i vrijeme brisanja datoteke
 * broj *hard* poveznica
 * 12 direktnih pokazivača na podatkovne blokove
 * 1 indirektni pokazivač na podatkovni blok koji sadrži tablicu s pokazivačima na podatkovne blokove
 * 1 dvostruko indirektni pokazivač na podatkovni blok koji sadrži tablicu s pokazivačima koji pokazuju na podatkovne blokove koji sadrže tablicu s pokazivačima na podatkovne blokove
 * 1 trostruko indirektni pokazivač na podatkovni blok koji sadrži tablicu s pokazivačima koji pokazuju na podatkovne blokove koji sadrže tablicu s pokazivačima koji pokazuju na podatkovne blokove koji sadrže tablicu s pokazivačima na podatkovne blokove
 
-Omjer stvorenih *inode-ova* naspram kapaciteta cijele particije je najčešće [1:16 KiB](https://www.redhat.com/sysadmin/inodes-linux-filesystem). Kod obične datoteke *inode* pokazivači pokazuju na podatkovne blokove koji sadrže podatke te datoteke. Kod direktorija *inode* pokazivači pokazuju na podatkovne blokove koji sadrže zapise o lokacijama *inode-ova* poddirektorija i datoteka koji se nalaze u trenutnom direktoriju čiji *inode* pregledavamo. Ti zapisi najčešće sadrže ime poddirektorija ili datoteke i pokazivač na njihov odgovarajući *inode*.
+Omjer stvorenih *inodeova* naspram kapaciteta cijele particije je najčešće [1:16 KiB](https://www.redhat.com/sysadmin/inodes-linux-filesystem). Kod obične datoteke *inode* pokazivači pokazuju na podatkovne blokove koji sadrže podatke te datoteke. Kod direktorija *inode* pokazivači pokazuju na podatkovne blokove koji sadrže zapise o lokacijama *inodeova* poddirektorija i datoteka koji se nalaze u trenutnom direktoriju čiji *inode* pregledavamo. Ti zapisi najčešće sadrže ime poddirektorija ili datoteke i pokazivač na njihov odgovarajući *inode*.
 
-U terminalu, ispis broja *inode-a* vezana uz datoteku može se učiniti naredbom: ```ls [putanja do datoteke] -i```
+U terminalu, ispis broja *inodea* vezana uz datoteku može se učiniti naredbom: ```ls [putanja do datoteke] -i```
 
-### Specijalni inode-ovi
+### Specijalni inodeovi
 
-U *EXT4* datotečnom sustavu postoje [specijalni *inode-ovi*](https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout#Special_inodes). Neki od njih su:
+U *EXT4* datotečnom sustavu postoje [specijalni *inodeovi*](https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout#Special_inodes). Neki od njih su:
 
 - *inode* 0
 	- pokazivač na NULL
@@ -166,9 +166,9 @@ U *EXT4* datotečnom sustavu postoje [specijalni *inode-ovi*](https://ext4.wiki.
 
 ### *Soft* i *Hard* poveznice
 
-*Soft* poveznice su poveznice kojima je stvoren vlastiti *inode* i sadržaj podatkovnog bloka na koji pokazuje taj *inode* pokazuje na putanju datoteke nad kojom je poveznica stvorena. Brisanje *Soft* poveznice samo označava *inode* i podatkovne blokove poveznice slobodnim, a *inode* same datoteke ostaje netaknut. Stvaranje *Soft* poveznice nad nekom datotekom u Linux-u može se napraviti u terminalu naredbom: ```ln -s [putanja do datoteke] [ime poveznice]```.
+*Soft* poveznice su poveznice kojima je stvoren vlastiti *inode* i sadržaj podatkovnog bloka na koji pokazuje taj *inode* pokazuje na putanju datoteke nad kojom je poveznica stvorena. Brisanje *Soft* poveznice samo označava *inode* i podatkovne blokove poveznice slobodnim, a *inode* same datoteke ostaje netaknut. Stvaranje *Soft* poveznice nad nekom datotekom u Linuxu može se napraviti u terminalu naredbom: ```ln -s [putanja do datoteke] [ime poveznice]```.
 
-*Hard* poveznice su poveznice koje pokazuju na isti *inode* datoteke nad kojom se vrši poveznica. *Hard* poveznice su zapravo samo zapisi u podatkovnom bloku direktorija u kojem se nalaze i one pokazuju na isti *inode* kao i datoteka. Brisanjem same datoteke neće označiti *inode* te datoteke oslobođenim već će samo zapis u podatkovnom bloku direktorija biti obrisan. Sami *inode* će biti obrisan kad se uklone sve *Hard* poveznice iz drugih direktorija koje pokazuju na taj *inode*. Stvaranje *Hard* poveznice nad nekom datotekom u Linux-u može se napraviti u terminalu naredbom: ```ln [putanja do datoteke] [ime poveznice]```.
+*Hard* poveznice su poveznice koje pokazuju na isti *inode* datoteke nad kojom se vrši poveznica. *Hard* poveznice su zapravo samo zapisi u podatkovnom bloku direktorija u kojem se nalaze i one pokazuju na isti *inode* kao i datoteka. Brisanjem same datoteke neće označiti *inode* te datoteke oslobođenim već će samo zapis u podatkovnom bloku direktorija biti obrisan. Sami *inode* će biti obrisan kad se uklone sve *Hard* poveznice iz drugih direktorija koje pokazuju na taj *inode*. Stvaranje *Hard* poveznice nad nekom datotekom u Linuxu može se napraviti u terminalu naredbom: ```ln [putanja do datoteke] [ime poveznice]```.
 
 Brisanje oba tipa poveznica može se izvesti jednostavno naredbom ```rm [ime poveznice]```
 
@@ -229,7 +229,7 @@ Zatim priključimo USB stick u računalo. Izvršavanjem ```fdisk -l``` naredbe u
 └── my-usb
 ```
 
-Naredba *mount* je na direktorij */my-usb/* montirao *FAT32* datotečni sustav. Sve operacije nad ovim direktorijem i svim njegovim poddirektorijima odnosno pisanje po particiji USB stick-a izvršavat će se upravljačkim programom *fat*. Pisanje i čitanje iz svih ostalih direktorija i njihovih poddirektorija odnosno particije na disku će se izvršavati uz pomoć upravljačkog programa *ext4*. Ako se želi otkvačiti particija USB stick-a potrebno je izvršiti naredbu ```umount /dev/sdb``` ili ```umount /my-usb/```. Direktorij */my-usb/* se mora ručno izbrisati naredbom ```rmdir /my-usb/```.
+Naredba *mount* je na direktorij */my-usb/* montirao *FAT32* datotečni sustav. Sve operacije nad ovim direktorijem i svim njegovim poddirektorijima odnosno pisanje po particiji USB sticka izvršavat će se upravljačkim programom *fat*. Pisanje i čitanje iz svih ostalih direktorija i njihovih poddirektorija odnosno particije na disku će se izvršavati uz pomoć upravljačkog programa *ext4*. Ako se želi otkvačiti particija USB sticka potrebno je izvršiti naredbu ```umount /dev/sdb``` ili ```umount /my-usb/```. Direktorij */my-usb/* se mora ručno izbrisati naredbom ```rmdir /my-usb/```.
 
 ## Linux struktura direktorija
 
@@ -240,7 +240,7 @@ Struktura direktorija Linux distribucija ravna se po [FHS-u (*eng. File System H
 - */sbin/*
 	- sadrži temeljne binarne izvršne datoteke za upravljanje sustavom koje samo privilegirani korisnik može koristiti
 - */boot/*
-	- sadrži datoteke potrebne za podizanje sustava (npr. kompresirana jezgra Linux-a, GRUB bootloader, initramfs, ...)
+	- sadrži datoteke potrebne za podizanje sustava (npr. kompresirana jezgra Linuxa, GRUB bootloader, initramfs, ...)
 - */dev/*
 	- direktorij gdje je montiran virtualni datotečni sustav tipa *devtmpfs*
 	- sadrži datoteke uređaja, u Unix filozofiji sve je datoteka pa tako su i uređaji datoteke nad kojima možemo vršiti razne operacije
@@ -286,7 +286,7 @@ Virtualni datotečni sustavi se ne nalaze na disku već u RAM-u. Pri svakom pono
 
 Recimo da smo instalirali bootloader [GRUB](https://wiki.archlinux.org/title/GRUB).
 
-### Učitavanje bootloader-a kad se koristi BIOS+MBR shema particioniranja
+### Učitavanje bootloadera kad se koristi BIOS+MBR shema particioniranja
 
 Kad se koristi [BIOS s MBR-om](https://wiki.archlinux.org/title/Arch_boot_process#Under_BIOS) on se instalira na sljedeći način:
 
@@ -303,7 +303,7 @@ Prilikom pokretanja sustava događa se [sljedeće](http://www.pixelbeat.org/docs
 	- ako ovaj dio nije instaliran prethodni zadnja instrukcija prethodnog koraka direktno pokazuje na sektor na particiji gdje se nalazi normal.mod
 - na kraju se izvodi normal.mod dio GRUB-a koji čita konfiguraciju */boot/grub/grub.cfg* i prezentira korisniku dostupne jezgre za pokrenuti
 
-### Učitavanje bootloader-a kad se koristi UEFI+GPT shema particioniranja
+### Učitavanje bootloadera kad se koristi UEFI+GPT shema particioniranja
 
 Kad se koristi [UEFI s GPT-om](https://wiki.archlinux.org/title/Arch_boot_process#Under_UEFI) na specijalnoj EFI particiji formatiranu uz pomoć FAT32 datotečnog sustava se instalira *EFI* izvršna datoteka (nastavak *.efi*). Ovakvu vrstu datoteka izvršava sam UEFI firmware.
 
@@ -314,7 +314,7 @@ Prilikom pokretanja sustava događa se sljedeće:
 - UEFI ima tablicu u NVRAM-u gdje se nalaze zapisi o svim *EFI* datotekama i lokacijama gdje se nalaze [(UEFI Boot Manager)](https://uefi.org/specs/UEFI/2.10/03_Boot_Manager.html) te pokušava ih izvršiti redom (tzv. Boot Order)
 - u slučaju da datoteke ne postoje ili uopće ne postoji ni jedan zapis, kreće traženje EFI particija svih spojenih prostora za pohranu gdje prioritet imaju prenosivi tipovi pohrane (npr. USB uređaji) pa onda tek ostali tipovi pohrane
 	- postoji tzv. [fallback boot način rada](https://www.boot-us.de/eng/gloss_uefi2.htm) koji učitava datoteku */efi/boot/bootx64.efi* ako postoji i ako za tu EFI particiju ne postoji zapis u NVRAM-u, ovo najčešće implementiraju ISO slike jer se ionako samo jednom učitava sustav iz njih (prilikom instalacije)
-	- zapisi u NVRAM-u se mogu uređivati ulaskom u UEFI prilikom podizanja preko UEFI ljuske, ulaskom u UEFI grafičko sučelje ili preko Linux-ovog alata *efibootmgr*
+	- zapisi u NVRAM-u se mogu uređivati ulaskom u UEFI prilikom podizanja preko UEFI ljuske, ulaskom u UEFI grafičko sučelje ili preko Linuxovog alata *efibootmgr*
 - pokrenuti bootloader čita konfiguraciju u */boot/grub/grub.cfg* i prezentira korisniku dostupne jezgre za pokrenuti
 
 #### UEFI ljuska
@@ -326,7 +326,7 @@ Prilikom pokretanja sustava događa se sljedeće:
 [OVMF (Open Virtual Machine Firmware)](https://wiki.archlinux.org/title/QEMU#Booting_in_UEFI_mode) je open source projekt koji omogućuje UEFI za virtualne strojeve i ima već ugrađenu UEFI ljusku. Prilikom instalacije OVMF-a na Linux distribuciju, potreno je baciti oko na dvije datoteke:
 
 - */usr/share/edk2/x64/OVMF_CODE.4m.fd*
-	- sadrži izvršni kod firmware-a za x64 procesore, u slučaju korištenja kod virtualnih strojeva
+	- sadrži izvršni kod firmwarea za x64 procesore, u slučaju korištenja kod virtualnih strojeva
 	- u ovoj datoteci se ništa ne smije pisat već samo čitat
 - */usr/share/edk2/x64/OVMF_VARS.4m.fd*
 	- ova datoteka služi kao NVRAM za zapise
@@ -334,11 +334,11 @@ Prilikom pokretanja sustava događa se sljedeće:
 
 ### Učitavanje Linux jezgre
 
-Bootloader nam daje opciju učitavanja jezgre po želji. [Jezgra](https://wiki.archlinux.org/title/Arch_boot_process#Kernel) se može u direktoriju */boot* naći u kompresiranom ili nekompresiranom obliku (*vmlinux-linux* ili *vmlinuz-linux*). Jezgra izvrši inicijalizaciju hardvera i raznih programa. Međutim, jezgra Linux-a je generična i nije prevedena za specifični sustav što znači da jezgra treba učitati jezgrene module (*eng. kernel modules*) što je ekvivalent upravljačkim programima. Za to će nam poslužiti *initramfs*.
+Bootloader nam daje opciju učitavanja jezgre po želji. [Jezgra](https://wiki.archlinux.org/title/Arch_boot_process#Kernel) se može u direktoriju */boot* naći u kompresiranom ili nekompresiranom obliku (*vmlinux-linux* ili *vmlinuz-linux*). Jezgra izvrši inicijalizaciju hardvera i raznih programa. Međutim, jezgra Linuxa je generična i nije prevedena za specifični sustav što znači da jezgra treba učitati jezgrene module (*eng. kernel modules*) što je ekvivalent upravljačkim programima. Za to će nam poslužiti *initramfs*.
 
 #### Učitavanje initramfs
 
-Nakon što se učita jezgra Linux-a, njoj je montiran prazni korijen odnosno [*rootfs*](https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html) što je zapravo specijalna instanca virtualnog datotečnog sustava *ramfs* u RAM-u. Ovdje će se otpakirati [*initramfs*](https://wiki.archlinux.org/title/Arch_boot_process#initramfs) koji sadrži program koji se zove *init*. Program *init* je prvi proces koji se izvršava na Linux-u (ID procesa je 1) i on učitava jezgrene module, pokreće servise i montira pravi datotečni sustav. Prilikom instalacije Linux distribucije, naredba ```mkinitcpio -P``` stvara datoteku */boot/initramfs-linux.img*.
+Nakon što se učita jezgra Linuxa, njoj je montiran prazni korijen odnosno [*rootfs*](https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html) što je zapravo specijalna instanca virtualnog datotečnog sustava *ramfs* u RAM-u. Ovdje će se otpakirati [*initramfs*](https://wiki.archlinux.org/title/Arch_boot_process#initramfs) koji sadrži program koji se zove *init*. Program *init* je prvi proces koji se izvršava na Linuxu (ID procesa je 1) i on učitava jezgrene module, pokreće servise i montira pravi datotečni sustav. Prilikom instalacije Linux distribucije, naredba ```mkinitcpio -P``` stvara datoteku */boot/initramfs-linux.img*.
 
 #### Proces *init*
 

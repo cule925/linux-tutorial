@@ -7,7 +7,7 @@ U većini instalacija Linux distribucija korisnici instaliraju Linux distribucij
 - */sbin/*
 	- sadrži temeljne binarne izvršne datoteke za upravljanje sustavom koje samo privilegirani korisnik može koristiti
 - */boot/*
-	- sadrži datoteke potrebne za podizanje sustava (npr. kompresirana jezgra Linux-a, GRUB bootloader, initramfs, ...)
+	- sadrži datoteke potrebne za podizanje sustava (npr. kompresirana jezgra Linuxa, GRUB bootloader, initramfs, ...)
 - */dev/*
 	- direktorij gdje je montiran virtualni datotečni sustav tipa *devtmpfs*
 	- sadrži datoteke uređaja, u Unix filozofiji sve je datoteka pa tako su i uređaji datoteke nad kojima možemo vršiti razne operacije
@@ -49,21 +49,21 @@ U većini instalacija Linux distribucija korisnici instaliraju Linux distribucij
 
 ## GNU i Linux
 
-Linux je ime za jezgru koju je u početku razvio Linus Torvalds ([izvorni kod](https://github.com/torvalds/linux)). [GNU Project](https://www.gnu.org/software/software.html) je inicijativa pokrenuta od Richarda Stallman-a kojoj je cilj bio razviti operacijski sustav koji je sličan Unix-u. GNU projekt je razvio mnoge alate za upravljanje operacijskim sustavom, ali im je nedostajala jezgra. Tu je poslužila Linux jezgra. Kad se netko referira na Linux često se misli na GNU alate i Linux jezgru zajedno.
+Linux je ime za jezgru koju je u početku razvio Linus Torvalds ([izvorni kod](https://github.com/torvalds/linux)). [GNU Project](https://www.gnu.org/software/software.html) je inicijativa pokrenuta od Richarda Stallmana kojoj je cilj bio razviti operacijski sustav koji je sličan Unixu. GNU projekt je razvio mnoge alate za upravljanje operacijskim sustavom, ali im je nedostajala jezgra. Tu je poslužila Linux jezgra. Kad se netko referira na Linux često se misli na GNU alate i Linux jezgru zajedno.
 
 Operacijski sustav služi kao posrednik između aplikacija i sklopovlja. Linux jezgra upravlja hardverom i resursima sustava, primjerice upravljanje procesima, upravljanje memorijom (*eng. Memory Management Unit - MMU*), upravljanje uređajima, datotečnim sustavom. Aplikacije rade zahtjeve za pristup nekim resursima uz pomoć sustavskih poziva (*eng. system calls*).
 
 ## Terminal i ljuska
 
-Terminal je tekstno sučelje koje se može koristiti za pisanje podataka u računalo i čitanje podataka s računala. Prije se na terminal mislilo na sučelje koje pruža fizički uređaj zvan teleprinter (*eng. teletypewriter*), ali je taj uređaj zamijenio računalni terminal, a kasnije emulator terminala na računalima. Ljuska je program koji interpretira naredbe korisnika (primjerice pokretanje aplikacije) koje on upisuje u emulator terminala i tako šalje zahtjeve Linux jezgri. Najpoznatija ljuska koja se koristi u Linux-u je [bash](https://www.gnu.org/software/bash/) koji je dio GNU softvera.
+Terminal je tekstno sučelje koje se može koristiti za pisanje podataka u računalo i čitanje podataka s računala. Prije se na terminal mislilo na sučelje koje pruža fizički uređaj zvan teleprinter (*eng. teletypewriter*), ali je taj uređaj zamijenio računalni terminal, a kasnije emulator terminala na računalima. Ljuska je program koji interpretira naredbe korisnika (primjerice pokretanje aplikacije) koje on upisuje u emulator terminala i tako šalje zahtjeve Linux jezgri. Najpoznatija ljuska koja se koristi u Linuxu je [bash](https://www.gnu.org/software/bash/) koji je dio GNU softvera.
 
-U Linux-u, terminali su predstavljeni datotekama uređaja u */dev/* direktoriju: *tty0*, *tty1*, *tty2*, ..., ovo su virtualni terminala i korisnik se može prebacivati s između njih kombinacijom tipki *Ctrl + Alt + F1...F7. Međutim, ako imamo instalirano grafičko sučelje, najčešće se preko njega koriste pseudo terminali (programsko emulirani terminali - primjerice *kgx*) predstavljeni s datotekama uređaja *pts/N*.
+U Linuxu, terminali su predstavljeni datotekama uređaja u */dev/* direktoriju: *tty0*, *tty1*, *tty2*, ..., ovo su virtualni terminala i korisnik se može prebacivati s između njih kombinacijom tipki *Ctrl + Alt + F1...F7. Međutim, ako imamo instalirano grafičko sučelje, najčešće se preko njega koriste pseudo terminali (programsko emulirani terminali - primjerice *kgx*) predstavljeni s datotekama uređaja *pts/N*.
 
 Ako smo instalirali neku Linux distribuciju bez grafičkog sučelja, prilikom pokretanja računala pojavit će nam se terminal za prijavu. To je upravo jedan od virtualnih terminala *ttyX*. Ako je kojim slučajem instalirano grafičko sučelje, upravitelj zaslona (primjerice *gdm* ako je instaliran *GNOME* desktop) će proslijediti korisničko ime i lozinku terminalu i korisnik će se na kraju opet prijaviti preko pseudo terminala.
 
 ## Osnovne naredbe za rad preko terminala koristeći ljusku bash
 
-Sljedeće naredbe su se izvodile koristeći ljusku bash. Direktoriji su u Linux-u organizirani kao stablo počevši od korijenskog direktorija (*/ - root*). Nad tim stablom se na određenim lokacijama mogu montirati datotečni sustavi s drugih particija. Ovo znači da smo efektivno produžili granu stabla prikvačivši stablo direktorija s druge particije na jednu od grana stabla direktorija trenutne particije. Primjerice, stablo direktorija prve razine na particiji gdje je instalirana Linux distribucija može izgledati ovako:
+Sljedeće naredbe su se izvodile koristeći ljusku bash. Direktoriji su u Linuxu organizirani kao stablo počevši od korijenskog direktorija (*/ - root*). Nad tim stablom se na određenim lokacijama mogu montirati datotečni sustavi s drugih particija. Ovo znači da smo efektivno produžili granu stabla prikvačivši stablo direktorija s druge particije na jednu od grana stabla direktorija trenutne particije. Primjerice, stablo direktorija prve razine na particiji gdje je instalirana Linux distribucija može izgledati ovako:
 
 ```
 /
@@ -107,7 +107,7 @@ man [informacije o naredbi koja nas zanima]
 
 ### Najosnovnije naredbe
 
-U Linux-u se položaj direktorija može zadati:
+U Linuxu se položaj direktorija može zadati:
 
 * apsolutno, od korijena (*/*)
 * relativno, od direktorija u kojem se nalazimo
@@ -144,7 +144,7 @@ Dodavanje opcija *-h* (čitljiviji format) i *-a* (ispis skrivenih direktorija i
 ls -lah [direktorij|datoteka]
 ```
 
-Ispis vrste datoteke može se napraviti dodavanjem opcije *-d*. U Linux-u je sve datoteka pa i direktoriji.
+Ispis vrste datoteke može se napraviti dodavanjem opcije *-d*. U Linuxu je sve datoteka pa i direktoriji.
 
 #### Stvaranje direktorija
 
@@ -277,7 +277,7 @@ df -h
 
 ## Korisnici i grupe
 
-U [Linux-u postoji više korisnika](https://wiki.archlinux.org/title/users_and_groups#). Svaki korisnik ima svoj UID (*eng User ID*) koji je jedinstven. Također, svaki Linux uvijek ima privilegiranog korisnika *root* kojem je UID 0. Datoteka gdje su izlistani korisnici je datoteka [*/etc/passwd*](https://wiki.archlinux.org/title/users_and_groups#File_list) koja sadrži jedan zapis oblika:
+U [Linuxu postoji više korisnika](https://wiki.archlinux.org/title/users_and_groups#). Svaki korisnik ima svoj UID (*eng User ID*) koji je jedinstven. Također, svaki Linux uvijek ima privilegiranog korisnika *root* kojem je UID 0. Datoteka gdje su izlistani korisnici je datoteka [*/etc/passwd*](https://wiki.archlinux.org/title/users_and_groups#File_list) koja sadrži jedan zapis oblika:
 
 ```
 [korisničko ime]:[lozinka]:[UID]:[GID]:[informacije]:[matični direktorij]:[korisnička ljuska]
@@ -471,7 +471,7 @@ Primjer postavljanje dozvole grupi:
 chmod g+s [datoteka]
 ```
 
-Slično kao i kod *sticky bit-a*, ne postoji mogućnost ručno dodati dopuštenje *S* već je potrebno ručno dodavati i micati opciju *s*.
+Slično kao i kod *sticky bita*, ne postoji mogućnost ručno dodati dopuštenje *S* već je potrebno ručno dodavati i micati opciju *s*.
 
 ### Promjena vlasnika korisnika datoteke
 
@@ -513,7 +513,7 @@ stat [datoteke]
 
 ## Preusmjeravanje ulaza i izlaza
 
-Naredbe koje se izvršavaju preko ljuske su procesi. U Linux-u, svi procesi imaju definirane [sljedeće ulaze i izlaze](https://www.digitalocean.com/community/tutorials/an-introduction-to-linux-i-o-redirection):
+Naredbe koje se izvršavaju preko ljuske su procesi. U Linuxu, svi procesi imaju definirane [sljedeće ulaze i izlaze](https://www.digitalocean.com/community/tutorials/an-introduction-to-linux-i-o-redirection):
 
 * standardni ulaz (*eng. stdin*)
 * standardni izlaz (*eng. stdout*)
@@ -523,7 +523,7 @@ Svi ovi ulazi su vezani za terminal. Proces komunicira s tim ulazima i izlazima 
 
 ### Preusmjeravanje u datoteku
 
-Recimo da izlaz neke naredbe želimo spremiti u datoteku. Ovo bi uključivalo preusmjeravanje *stdout-a* naredbe na *stdin* programa koji stvara i piše u datoteku. To se može napraviti operatorom *>*:
+Recimo da izlaz neke naredbe želimo spremiti u datoteku. Ovo bi uključivalo preusmjeravanje *stdouta* naredbe na *stdin* programa koji stvara i piše u datoteku. To se može napraviti operatorom *>*:
 
 ```
 [naredba] > [datoteka]

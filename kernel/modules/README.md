@@ -1,6 +1,6 @@
 # LINUX JEZGRENI MODULI
 
-[Linux jezgreni moduli](https://wiki.archlinux.org/title/Kernel_module) su programi koji proširuju funkcionalnost Linux jezgre. Slični su upravljačkim programima. Mogu se ubaciti i izbaciti po želji bez ponovnog pokretanja Linux-a. Neki moduli se automatski učitavaju prilikom pokretanja sustava (definirani u */usr/lib/modules/$(uname -r)/* direktoriju). Također postoji mogućnost ugradnje modula prilikom prevođenja Linux jezgre. Jezgreni moduli odnosno jezgrene objektne datoteke koje pružaju dodatne funkcionalnosti Linux jezgri imaju nastavak *.ko*. Prilikom učitavanja jezgrenih modula imena koja sadrže *-* se pretvaraju u *_* primjerice učitavanje jezgrene objektne datoteke *my-module.ko* će prilikom izlistavanja svih modula imati naziv *moj_modul*. Ovo se događa radi pridržavanja konvencijama o imenovanju u jeziku C.
+[Linux jezgreni moduli](https://wiki.archlinux.org/title/Kernel_module) su programi koji proširuju funkcionalnost Linux jezgre. Slični su upravljačkim programima. Mogu se ubaciti i izbaciti po želji bez ponovnog pokretanja Linuxa. Neki moduli se automatski učitavaju prilikom pokretanja sustava (definirani u */usr/lib/modules/$(uname -r)/* direktoriju). Također postoji mogućnost ugradnje modula prilikom prevođenja Linux jezgre. Jezgreni moduli odnosno jezgrene objektne datoteke koje pružaju dodatne funkcionalnosti Linux jezgri imaju nastavak *.ko*. Prilikom učitavanja jezgrenih modula imena koja sadrže *-* se pretvaraju u *_* primjerice učitavanje jezgrene objektne datoteke *my-module.ko* će prilikom izlistavanja svih modula imati naziv *moj_modul*. Ovo se događa radi pridržavanja konvencijama o imenovanju u jeziku C.
 
 Jezgreni moduli, iako mogu raditi u korisničkom prostoru, najčešće rade u prostoru jezgre. Ovo znači da modul ima najveću privilegiju izvršavanja, primjerice direktno pisanje ili čitanje po sklopovlju što može biti vrlo opasno. Stoga moduli moraju biti kvalitetno napisani bez ikakvih grešaka kako ne bi došlo do zastoja sustava.
 
@@ -208,7 +208,7 @@ module_exit(my_module_exit);
 MODULE_LICENSE("GPL");
 ```
 
-Svaki argument mora imati nekakvu uobičajenu vrijednost ako mu se nikakva vrijednost ne proslijedi tijekom umetanja modula. Objašnjenja makro-a su sljedeća:
+Svaki argument mora imati nekakvu uobičajenu vrijednost ako mu se nikakva vrijednost ne proslijedi tijekom umetanja modula. Objašnjenja makroa su sljedeća:
 
 * *module_param()* - definira parametar modula, uzima ime varijable u programu za koje parametar vezan, tip varijable i dopuštenja nad datotekom koja predstavlja taj parametar (na */sys/module/my_module/parameters*)
 * *module_param_array()* - kao i kod *module_param()* uz dodatni argument brojača proslijeđenih argumenata nizu

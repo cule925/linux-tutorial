@@ -4,9 +4,9 @@
 
 ## Preuzimanje slike
 
-Arch Linux se može preuzeti na mnogo načina, moguće je direktno preuzeti uz pomoć HTTP-a ili uz pomoć BitTorrent-a. Moguće je također preuzeti sliku za virtualni stroj ili pak Docker sliku ako ga se ne želi izravno instalirati na sustav. Više stvari o načinima preuzimanja se mogu vidjeti [ovdje](https://archlinux.org/download/).
+Arch Linux se može preuzeti na mnogo načina, moguće je direktno preuzeti uz pomoć HTTP-a ili uz pomoć BitTorrenta. Moguće je također preuzeti sliku za virtualni stroj ili pak Docker sliku ako ga se ne želi izravno instalirati na sustav. Više stvari o načinima preuzimanja se mogu vidjeti [ovdje](https://archlinux.org/download/).
 
-U Linux-u se integritet preuzete datoteke može provjeriti SHA256 sažetkom. SHA256 sažetak ISO slike može se dobiti u Linux terminalu naredbom:
+U Linuxu se integritet preuzete datoteke može provjeriti SHA256 sažetkom. SHA256 sažetak ISO slike može se dobiti u Linux terminalu naredbom:
 
 ```
 sha256sum [ISO datoteka]
@@ -18,7 +18,7 @@ Potrebno je provjeriti odgovara li sažetak sažetku sa [službene stranice inst
 gpg --keyserver-options auto-key-retrieve --verify [SIG datoteka] [ISO datoteka]
 ```
 
-### Priprema Arch Linux-a za instalaciju na računalo 
+### Priprema Arch Linuxa za instalaciju na računalo 
 
 Preuzetu ISO datoteku potrebno je zapisati na USB stick. Na Windows se može preuzeti aplikacija koja to radi primjerice [ISO Image Writer](https://apps.kde.org/isoimagewriter/). Ako se koristi Linux distribucija slika se može jednostavno zapisati naredbom u terminalu:
 
@@ -26,7 +26,7 @@ Preuzetu ISO datoteku potrebno je zapisati na USB stick. Na Windows se može pre
 dd bs=4M if=[ISO datoteka] of=[datoteka uređaja koja predstavlja cijeli USB, ne samo particiju] status=progress oflag=sync
 ```
 
-### Priprema Arch Linux-a za instalaciju na virtualni disk koji se pokreće QEMU-om
+### Priprema Arch Linuxa za instalaciju na virtualni disk koji se pokreće QEMU-om
 
 Ako trenutno koristimo Arch Linux i želimo instalirati [Arch Linux na virtualni disk](https://wiki.archlinux.org/title/QEMU) i pokretat ga takvog u virtualnom stroju potrebno je prvo instalirati [QEMU-u](https://www.qemu.org/) uz pomoć terminala:
 
@@ -297,7 +297,7 @@ Prije instalacije, potrebno je osvježiti GPG ključeve naredbom:
 pacman-key --refresh-key
 ```
 
-Zatim je potrebno uz pomoć alata [*pacstrap*](https://wiki.archlinux.org/title/Pacstrap) instalirati Linux jezgru, datoteke za firmware i osnovne alate za rad s Linux-om:
+Zatim je potrebno uz pomoć alata [*pacstrap*](https://wiki.archlinux.org/title/Pacstrap) instalirati Linux jezgru, datoteke za firmware i osnovne alate za rad s Linuxom:
 
 ```
 pacstrap -K /mnt/ base base-devel linux linux-firmware
@@ -396,7 +396,7 @@ Zaporka korisnika *root* postavlja se naredbom:
 passwd
 ```
 
-#### Instalacija mikrokod-a (ovo ne vrijedi za virtualne strojeve)
+#### Instalacija mikrokoda (ovo ne vrijedi za virtualne strojeve)
 
 Prvo je potrebno instalirati [mikrokod](https://wiki.archlinux.org/title/Microcode) za AMD ili Intel. Mikrokod je na neki način firmware samog procesora. Tijekom stvaranja GRUB konfiguracije ona će uključiti mikrokod u */boot/* direktoriju ako postoji. Mikrokod se **ne instalira ako se Arch Linux pokreće iz virtualnog stroja**.
 
@@ -420,10 +420,10 @@ pacman -S intel-ucode
 
 Stvorit će se datoteka */boot/intel-ucode.img*.
 
-#### Instalacija GRUB bootloader-a
+#### Instalacija GRUB bootloadera
 
 
-##### BIOS + MBR instalacija bootloader-a
+##### BIOS + MBR instalacija bootloadera
 
 Za početak je potrebno preuzeti [GRUB bootloader](https://wiki.archlinux.org/title/GRUB) i alat za detektiranje drugih operacijskih sustava na diskovima:
 
@@ -437,7 +437,7 @@ Zatim je potrebno instalirati GRUB bootloader na disk (MBR, prostor iza MBR-a i 
 grub-install --target=i386-pc [datoteka uređaja koja predstavlja disk (ne particiju)]
 ```
 
-##### UEFI + GPT instalacija bootloader-a
+##### UEFI + GPT instalacija bootloadera
 
 Za početak je potrebno preuzeti [GRUB bootloader](https://wiki.archlinux.org/title/GRUB), efibootmgr koji služi za pisanje zapisa u NVRAM, alat za detektiranje drugih operacijskih sustava na diskovima i alate za pristup MS-DOS diskovima:
 
@@ -477,9 +477,9 @@ GRUB_DISABLE_OS_PROBER=false
 
 U slučaju da se želi uređivati NVRAM UEFI-ja to se može alatom *efibootmgr*. Primjerice, ako se žele izlistati svi zapisi to se može naredbom ```efibootmgr``` ili primjerice brisanje po ID-u se može izvest naredbom ```efibootmgr -b [Boot ID] -B```.
 
-#### Izlazak iz chroot-a, demontiranje particija i ponovno pokretanje
+#### Izlazak iz chroota, demontiranje particija i ponovno pokretanje
 
-Izlazak iz *chroot-a* može se napraviti naredbom:
+Izlazak iz *chroota* može se napraviti naredbom:
 
 ```
 exit
@@ -580,7 +580,7 @@ pacman -S nvidia
 
 Prilikom ponovnog pokretanja jezgreni modul *nvidia* bi se trebao automatski učitati u jezgru. Provjera jeli se to stvarno dogodilo se može napraviti naredbom ```lspci -k | grep -A 3 -E "(VGA|3D)"```. Postoji i *open source* verzija *nouveau*, ali su performanse lošije.
 
-#### Instalacija X Window System-a i GNOME desktop okoline
+#### Instalacija X Window Systema i GNOME desktop okoline
 
 Instalacija XORG poslužitelja, [GNOME desktop okoline](https://wiki.archlinux.org/title/GNOME) i omogućavanje upravitelja zaslona gdm-a radi se naredbama:
 
@@ -618,7 +618,7 @@ Preporuke:
 		ILoveCandy
 		...
 		```
-- uređivanje *prompt-a* odnosno varijable okruženja *PS1* u *.bashrc* datoteci:
+- uređivanje *prompta* odnosno varijable okruženja *PS1* u *.bashrc* datoteci:
 	- potrebno je dati vlastitu vrijednost varijabli *PS1* u obliku ```PS1='\[\033[01;38;2;R;G;Bm\]\u@\h:\w \$\[\033[00m\] '```
 		- *R*, *G* i *B* predstavljaju intenzitete boja, rasponi su im od 0 uključivo do 255 uključivo
 	- primjerice:
@@ -643,7 +643,7 @@ Dodatni paketi koji bi možda bili korisni:
 	- *curl* : za prijenos datoteka preko mreže
 	- *cmake* : alat za izgradnju
 	- *zip* i *unzip* : za kompresiju i dekompresiju
-	- *bluez* i *bluez-utils* : za upravljanje Bluetooth-om, nakon instalacije je potrebno omogućiti servis bluetooth i započeti njegov rad (naredbe ```systemctl enable bluetooth``` i ```systemctl start bluetooth```)
+	- *bluez* i *bluez-utils* : za upravljanje Bluetoothom, nakon instalacije je potrebno omogućiti servis bluetooth i započeti njegov rad (naredbe ```systemctl enable bluetooth``` i ```systemctl start bluetooth```)
 	- *usbutils* : za ispisivanje informacija o USB uređajima
 	- *lsof* : alat za izlistavanje svih otvorenih datoteka
 	- *net-tools*, *inetutils* i *nmap* : raznorazni mrežni alati
@@ -659,7 +659,7 @@ pacman -S git htop fastfetch firefox ffmpeg gst-libav gedit man-db wget curl cma
 
 ### Završna napomena
 
-Arch Linux prati tzv. Rolling Release Model što znači da se sustav kontinuirano ažurira. Ovo znači da ne postoje konkretne verzije Arch Linux-a već se softverski paketi neprestano ažuriraju. Kako bi se sustav održao ažurnim potrebno je ažurirati sve pakete naredbom:
+Arch Linux prati tzv. Rolling Release Model što znači da se sustav kontinuirano ažurira. Ovo znači da ne postoje konkretne verzije Arch Linuxa već se softverski paketi neprestano ažuriraju. Kako bi se sustav održao ažurnim potrebno je ažurirati sve pakete naredbom:
 
 ```
 sudo pacman -Syu
