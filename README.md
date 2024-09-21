@@ -9,3 +9,4 @@ Preporuča se slijediti sljedeće linkove:
 * upravljanje servisima: [ovdje](services)
 * upravljanje mrežom: [ovdje](networking)
 * koncepti jezgre: [ovdje](kernel)
+* virtualizacija: [ovdje](virtualization)
