@@ -21,12 +21,12 @@ if [[ -z $BR_IF ]]; then
 fi
 
 # Dismantle the network
-sudo ip link set $ETH_IF down
-sudo ip link set $ETH_IF nomaster
+ip link set $ETH_IF down
+ip link set $ETH_IF nomaster
 
-sudo ip link set $BR_IF down
-sudo ip link delete $BR_IF type bridge
+ip link set $BR_IF down
+ip link delete $BR_IF type bridge
 
-sudo ip link set $ETH_IF up
+ip link set $ETH_IF up
 
 echo "Bridge $BR_IF destroyed!"
