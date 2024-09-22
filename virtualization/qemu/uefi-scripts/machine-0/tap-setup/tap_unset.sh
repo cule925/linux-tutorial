@@ -15,9 +15,9 @@ if [[ -z $TAP_IF ]]; then
 	exit 1
 fi
 
-sudo ip link set $TAP_IF down
-sudo ip link set $TAP_IF nomaster
+ip link set $TAP_IF down
+ip link set $TAP_IF nomaster
 
-sudo ip tuntap del $TAP_IF mode tap
+ip tuntap del $TAP_IF mode tap
 
 echo "TAP interface $TAP_IF destroyed!"
