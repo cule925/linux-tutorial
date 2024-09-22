@@ -6,7 +6,7 @@ if [[ $EUID -ne 0 ]]; then
 	exit 1
 fi
 
-# Store disk name
+# Store disk name in variable
 DISK=$(cat target_disk.txt)
 
 # Check if variable is empty
