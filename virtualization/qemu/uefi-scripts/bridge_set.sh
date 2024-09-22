@@ -33,6 +33,6 @@ ip link set $BR_IF up
 ip link set $ETH_IF up
 ip link set $ETH_IF master $BR_IF
 
-sudo dhclient $BR_IF
+dhclient $BR_IF
 
 echo "Bridge $BR_IF created!"
