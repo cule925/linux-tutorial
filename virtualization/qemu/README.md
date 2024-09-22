@@ -126,13 +126,13 @@ Prije povezivanja svih potrebnih sučelja, potrebno ih je aktivirati:
 ```
 sudo ip link set br0 up
 sudo ip link set tap0 up
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] up
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] up
 ```
 
 Zatim je potrebno povezati fizičko Ethernet sučelje i TAP sučelje na most:
 
 ```
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] master br0
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] master br0
 sudo ip link set tap0 master br0
 ```
 
@@ -169,7 +169,7 @@ Većina argumenata su isti osim:
 Kada virtualni stroj završi s radom potrebno je razmontirati sve. Za početak je potrebno deaktivirati Ethernet i TAP sučelja:
 
 ```
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] down
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] down
 sudo ip link set tap0 down
 ```
 
@@ -177,7 +177,7 @@ Nakon toga je potrebno ukloniti sva sučelja s mosta:
 
 ```
 sudo ip link set tap0 nomaster
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] nomaster
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] nomaster
 ```
 
 Onda je potrebno obrisati TAP sučelje:
@@ -201,7 +201,7 @@ sudo ip link delete br0 type bridge
 Naposljetku je potrebno aktivirati Ethernet sučelje i zatražiti od usmjernika novu IP adresu:
 
 ```
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] up
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] up
 ```
 
 #### Skripte za naredbe
@@ -217,8 +217,8 @@ sudo ip link add name br0 type bridge
 sudo ip link set br0 address 02:FF:FF:FF:FF:00
 sudo ip link set br0 up
 
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] up
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] master br0
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] up
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] master br0
 
 sudo dhclient br0
 ```
@@ -281,13 +281,13 @@ Skripta *bridge_unset.sh* imat će sljedeći sadržaj:
 ```
 #!/bin/bash
 
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] down
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] nomaster
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] down
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] nomaster
 
 sudo ip link set br0 down
 sudo ip link delete br0 type bridge
 
-sudo ip link set [Fizičko Ethernet sučelje spojeno na Internet] up
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] up
 ```
 
 Konačno, druga računala na mreži sada mogu izravno komunicirati s virtualnim strojem bez ikakvog potrebnog prosljeđivanja porta s domaćina. Virtualni stroj se ponaša kao da je izravno spojen na LAN mrežu uz računala domaćina.
@@ -346,7 +346,7 @@ lsusb
 Izlazi bi trebali biti oblika:
 
 ```
-Bus [Broj sabirnice] Device [Broj uređaja]: ID [ID proizvođača]:[ID uređaja] [Opis uređaja]
+Bus [broj sabirnice] Device [broj uređaja]: ID [ID proizvođača]:[ID uređaja] [opis uređaja]
 ```
 
 Potrebno je imati na umu da se broj uređaja mijenja svakim ponovnim priključivanjem USB uređaja. Dakle, USB uređaj mora ostati uključen cijelo vrijeme tijekom rada virtualnog stroja. Naredba za pokretanje QEMU-a bi trebala izgledati ovako:
@@ -363,7 +363,7 @@ sudo qemu-system-x86_64 \
 -audio driver=pa,model=virtio,server=/run/user/1000/pulse/native \
 -vga virtio \
 -device qemu-xhci,id=xhci \
--device usb-host,hostbus=[Broj sabirnice],hostaddr=[Broj uređaja]
+-device usb-host,hostbus=[broj sabirnice],hostaddr=[broj uređaja]
 ```
 
 XHCI upravljač je USB upravljač koji ima potporu za USB 1.0, USB 2.0 i USB 3.0. Većina operacijskih sustava poslije 2010-e godine nudi podršku za ovaj upravljač. Prethodna naredba emulira XHCI.
@@ -394,6 +394,7 @@ sudo qemu-system-x86_64 \
 -smp 4 \
 -netdev tap,id=net0,ifname=tap0,script=no,downscript=no \
 -device virtio-net-pci,netdev=net0 \
+[-cdrom archlinux.iso] \
 -drive format=qcow2,file=archlinux.qcow2 \
 -audio driver=pa,model=virtio,server=/run/user/1000/pulse/native \
 -vga virtio \
