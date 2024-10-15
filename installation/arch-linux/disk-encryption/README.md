@@ -322,6 +322,8 @@ menuentry 'My Windows Entry' {
 - *chainloader /efi/Microsoft/Boot/bootmgfw.efi* (više [ovdje](https://www.gnu.org/software/grub/manual/grub/grub.html#chainloader))
 	- učitava Windowsov bootloader (pretpostavljajući da se tu nalazi) i prepušta mu kontrolu
 
+**Nakon uređivanja /etc/grub.d/40-custom datoteke potrebno je ponovno izgenerirati konfiguraciju naredbom 'grub-mkconfig -o /boot/grub/grub.cfg'** 
+
 ### Izlaz, odmontiranje i ponovno pokretanje
 
 Izlaz, odmontiranje i zatvaranje enkriptirane particije radi se sljedećim naredbama:
