@@ -172,8 +172,8 @@ arch-chroot /mnt/
 # Postavljanje sustava
 ln -sf /usr/share/zoneinfo/Europe/Zagreb /etc/localtime
 hwclock --systohc
-sed -i 's/^#\s*\(en_US.UTF-8\sUTF-8\)/\1/' locale.gen
-sed -i 's/^#\s*\(hr_HR.UTF-8\sUTF-8\)/\1/' locale.gen
+sed -i 's/^#\s*\(en_US.UTF-8\sUTF-8\)/\1/' /etc/locale.gen
+sed -i 's/^#\s*\(hr_HR.UTF-8\sUTF-8\)/\1/' /etc/locale.gen
 locale-gen
 echo "LANG=en_US.UTF-8" | tee /etc/locale.conf
 echo "KEYMAP=croat" | tee /etc/vconsole.conf
