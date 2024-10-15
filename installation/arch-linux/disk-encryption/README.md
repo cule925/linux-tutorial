@@ -215,7 +215,7 @@ Bootloader treba Linux jezgri proslijediti parametre za otključavanje ispravne 
 
 ```
 ...
-LINUX_KERNEL_PARAMETERS="... cryptdevice=UUID=[UUID enkriptirane particije]:root root=/dev/mapper/[ime mapirane dekriptirane particije]..."
+LINUX_KERNEL_PARAMETERS="... cryptdevice=UUID=[UUID enkriptirane particije]:[ime mapirane dekriptirane particije] root=/dev/mapper/[ime mapirane dekriptirane particije] ..."
 ...
 ```
 
