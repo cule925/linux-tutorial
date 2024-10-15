@@ -2,6 +2,8 @@
 
 [Arch Linux](https://wiki.archlinux.org/) je Linux distribucija namijenjena za x86-64 procesorske arhitekture. Instalira se kao minimalni osnovni sustav koji se kasnije onda konfigurira po korisnikovim željama. Konfiguracija sustava se najčešće izvodi preko ljuske. Arch Linux nudi svoj vlastiti upravitelj *pacman*. Arch Linux koristi *rolling release* način rada koji omogućuje konstantno ažuriranje paketa bez reinstalacije cijelog sustava. Ovo omogućuje da sustav bude ažuran.
 
+Sljedeće upute opisuju načine instalacije Arch Linuxa na računalo. Također, vrijedilo bi pogledati instalacije s Arch Linuxa s [enkripcijom diska](disk-encryption).
+
 ## Preuzimanje slike
 
 Arch Linux se može preuzeti na mnogo načina, moguće je direktno preuzeti uz pomoć HTTP-a ili uz pomoć BitTorrenta. Moguće je također preuzeti sliku za virtualni stroj ili pak Docker sliku ako ga se ne želi izravno instalirati na sustav. Više stvari o načinima preuzimanja se mogu vidjeti [ovdje](https://archlinux.org/download/).
@@ -355,10 +357,10 @@ locale-gen
 
 Ovo će generirati skup postavku koje će određivati kako prikazivati i obraditi tekstualne podatke kao primjerice jezik, vremenski formati, valute i slično, ovisno o postavkama u */etc/locale.gen* datoteci.
 
-Jezik sustava se postavlja tako što se uređuje datoteka */etc/locale.conf* (naredba ```nano /etc/locale.conf```). Sadržaj te datoteke treba biti:
+Jezik sustava se postavlja tako što se uređuje datoteka */etc/locale.conf* (naredba ```nano /etc/locale.conf```). Primjerice, ako se želi postaviti jezik sustava engleski (preporučeno), u datoteku je potrebno pisati:
 
 ```
-LANG=hr_HR.UTF-8
+LANG=en_US.UTF-8
 ```
 
 Raspored tipkovnice i font se za novi sustav postavlja uređujući datoteku */etc/vconsole.conf* (naredba ```nano /etc/vconsole.conf```):
@@ -527,7 +529,7 @@ Zastavica *-m* stvara i korisnički direktorij, a zastavica *-G* govori da se ko
 passwd [ime korisnika]
 ```
 
-Omogućivanje novostvorenom korisniku izvršavanje privilegiranih naredbi uz pomoć *sudo* alata radi se tako što se uredi datoteka */etc/sudoers* (naredba ```nano /etc/sudoers```) i otkomentira se redak:
+Omogućivanje novostvorenom korisniku izvršavanje privilegiranih naredbi uz pomoć *sudo* alata radi se tako što se uredi datoteka */etc/sudoers* (naredba ```EDITOR=nano visudo```) i otkomentira se redak:
 
 ```
 ...

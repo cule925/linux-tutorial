@@ -15,8 +15,8 @@ Ovo su upute za instalaciju pojedinih Linux distribucija. Upute su sljedeće:
 Master Boot Record je zapis u prvom logičkom sektoru diska LBA 0, veličine 512 bajtova. Prvih 446 bajtova je x86 *bootstrap* kod, sljedećih 64 bajtova su informacije o 4 particijama (16 bajta za svaku), a zadnja dva bajta daju do znanja BIOS-u da sektor sadrži MBR zapis (bajt 0x55 i bajt 0xAA). Podjela diska može izgledati ovako:
 
 ```
-            |  LBA-0  |  LBA-1 -> LBA-1000000  |  LBA-1000001 -> LBA-X  |
-   DISK     |   MBR   |           P1           |           P2           |
+                    |  LBA-0  |  LBA-1 -> LBA-1000000  |  LBA-1000001 -> LBA-X  |
+           DISK     |   MBR   |           P1           |           P2           |
 ```
 
 X označava broj zadnjeg logičkog bloka. P1 i P2 su dvije primarne particije.
@@ -26,8 +26,8 @@ Maksimalna veličina diska sa sektorima veličine 512 bajta može biti veličine
 [GUID Partition Table (GPT)](https://uefi.org/specs/UEFI/2.10/05_GUID_Partition_Table_Format.html) je novija shema particioniranja. Disk s GPT shemom particioniranja sadrži dva GPT zaglavlja, jedan na LBA-1, drugi na LBA-X gdje je X zadnji logički sektor diska. LBA-0 sadrži tzv. *Protective MBR*, MBR zapis koji pokazuje na samo jednu particiju, raspona od LBA-1 do LBA-X. Ovaj MBR zapis se koristi kako bi se osigurala kompatibilnost alata koji ne prepoznaju GPT shemu particioniranja. GPT zaglavlje sadrži mnogo informacija kao što su primjerice jedinstveni zapis (GUID), početni i završni LBA koji se koristi za particije određivanje granice particija, CRC32 broja za provjeru korupcije zaglavlja, broj particija, veličina zapisa koji opisuje particiju, CRC32 broja za provjeru korupcije zapisa particija i slično. Iza prvog GPT zaglavlja i iza drugog GPT zaglavlja dolaze zapisi o particijama. Svaki zapis sadrži GUID tipa particije, početni LBA particije, završni LBA particije i slično. Svaki zapis je minimalne veličine 128 bajtova i može okupirati od LBA-2 pa sve do LBA-33 iza primarnog GPT zaglavlja odnosno LBA-(X-32) pa sve do LBA-(X-1) ispred sekundarnog GPT zaglavlja kod diskova gdje je jedan sektor veličine 512 bajtova. Podjela diska u kome je jedan sektor veličine 512 bajtova može izgledati ovako:
 
 ```
-            |     LBA-0      |       LBA-1        |   LBA-2 -> LBA-33     | LBA-34 -> LBA-1000000 | LBA-1000001 -> LBA-(X-33) | LBA-(X-32) -> LBA-(X-1) |        LBA-X         |
-   DISK     | Protective MBR | GPT primary header | GPT partition entries |          P1           |            P2             |  GPT partition entries  | GPT secondary header |
+                    |     LBA-0      |       LBA-1        |   LBA-2 -> LBA-33     | LBA-34 -> LBA-1000000 | LBA-1000001 -> LBA-(X-33) | LBA-(X-32) -> LBA-(X-1) |        LBA-X         |
+           DISK     | Protective MBR | GPT primary header | GPT partition entries |          P1           |            P2             |  GPT partition entries  | GPT secondary header |
 ```
 
 X označava broj zadnjeg logičkog bloka. P1 i P2 su dvije primarne particije.
@@ -37,7 +37,7 @@ X označava broj zadnjeg logičkog bloka. P1 i P2 su dvije primarne particije.
 Datotečni sustav opisuje način organizacije datoteka, pristup datotekama i strukture kojima su predstavljene te datoteke. Formatiranje particije je stvaranje novog datotečnog sustava na particiji. Jedan od starijih datotečnih sustava, ali još uvijek korišten je [*FAT32*](https://www.pjrc.com/tech/8051/ide/fat32.html). Particija se formatira na FAT32 tako što se u prvom sektoru u particiji upiše *Volume ID* pa se iza njega ostavi par sektora te onda slijedi *FAT#1* i *FAT#2* koje opisuju koji su klasteri zauzeti. *FAT#2* služi kao pričuvna kopija jer su se u starijim diskovima znale događati situacije s lošim sektorima. Zatim većinu sektora slijede klasteri što su zapravo nakupine sektora koje predstavljaju datoteku ili direktorij. Svaka datoteka ili direktorij je zapravo jednostrano povezana lista klastera. *Volume ID* pokazuje od kojeg klastera započinje korijenski direktorij. Također, FAT tablice sadrže i mapu klastera te se uz svaki klaster u toj mapi nalazi bit zauzetosti (0 slobodan, 1 zauzet) i indeks na sljedeći klaster koji čini strukturiranu datoteku. Ako je klaster zadnji u listi onda mu indeks na sljedeći klaster pokazuje na -1. Ako je klaster slobodan bit zauzetosti mu je 0. a indeks na sljedeći klaster mu je -1. Primjer rasporeda komponenti *FAT32* datotečnog sustava na particiji P1:
 
 ```
-   PARTICIJA P1     | Volume ID | FAT#1 | FAT#2 | *klasteri* | *slobodan dio* |
+           PARTICIJA P1     | Volume ID | FAT#1 | FAT#2 | *klasteri* | *slobodan dio* |
 ```
 
 Maksimalna veličina particije gdje se može iskoristiti FAT32 datotečni sustav je 2 TiB s veličinom sektora od 512 bajta dok je maksimalna veličina datoteke 4 GiB. Potrebno je naglasiti da *FAT32* format sve metapodatke o datoteci sprema u zapisu direktorija, ne u samom bloku podatka namijenjenog za datoteku.
@@ -55,80 +55,80 @@ Noviji datotečni sustav je [*EXT4*](https://ext4.wiki.kernel.org/index.php/Ext4
 *EXT4* datotečni sustav podijeljen je na grupe blokova koji u sebi sadrže blokove. Veličina jednog bloka je obično 4096 bajtova (4 KiB). Za svaku grupu blokova postoji po jedan opisnik grupe blokova, jedna bitmapa blokova, jedna *inode* bitmapa i jedna *inode* tablica. Primjer [rasporeda *EXT4* datotečnog sustava](https://blogs.oracle.com/linux/post/understanding-ext4-disk-layout-part-1) na particiji P2:
 
 ```
-   PARTICIJA P2
+           PARTICIJA P2
 
------------------------------------------------------
-       *slobodnih 1024 bajtova za instalaciju*
------------------------------------------------------
-                     super blok
------------------------------------------------------
-                 *slobodni prostor*
------------------------------------------------------
-          blok opisnik za 0. grupu blokova
------------------------------------------------------
-          blok opisnik za 1. grupu blokova
------------------------------------------------------
-                         ...
------------------------------------------------------
-          blok opisnik za n. grupu blokova
------------------------------------------------------
-            bitmapa za 0. grupu blokova
------------------------------------------------------
-            bitmapa za 1. grupu blokova
------------------------------------------------------
-                         ...
------------------------------------------------------
-            bitmapa za n. grupu blokova
------------------------------------------------------
-     bitmapa inode čvorova za 0. grupu blokova
------------------------------------------------------
-     bitmapa inode čvorova za 1. grupu blokova
------------------------------------------------------
-                         ...
------------------------------------------------------
-     bitmapa inode čvorova za n. grupu blokova
------------------------------------------------------
-             prvi inode 0. grupe blokova
------------------------------------------------------
-             drugi inode 0. grupe blokova
------------------------------------------------------
-                         ...
------------------------------------------------------
-            zadnji inode 0. grupe blokova
------------------------------------------------------
-             prvi inode 1. grupe blokova
------------------------------------------------------
-             drugi inode 1. grupe blokova
------------------------------------------------------
-                         ...
------------------------------------------------------
-            zadnji inode 1. grupe blokova
------------------------------------------------------
-                         ...
-                         ...
-                         ...
------------------------------------------------------
-             prvi inode n. grupe blokova
------------------------------------------------------
-             drugi inode n. grupe blokova
------------------------------------------------------
-                         ...
------------------------------------------------------
-            zadnji inode n. grupe blokova
------------------------------------------------------
-                     blok grupa 0
------------------------------------------------------
-                     blok grupa 1
------------------------------------------------------
-                         ...
------------------------------------------------------
-                     blok grupa n
+        -----------------------------------------------------
+               *slobodnih 1024 bajtova za instalaciju*
+        -----------------------------------------------------
+                             super blok
+        -----------------------------------------------------
+                         *slobodni prostor*
+        -----------------------------------------------------
+                  blok opisnik za 0. grupu blokova
+        -----------------------------------------------------
+                  blok opisnik za 1. grupu blokova
+        -----------------------------------------------------
+                                 ...
+        -----------------------------------------------------
+                  blok opisnik za n. grupu blokova
+        -----------------------------------------------------
+                    bitmapa za 0. grupu blokova
+        -----------------------------------------------------
+                    bitmapa za 1. grupu blokova
+        -----------------------------------------------------
+                                 ...
+        -----------------------------------------------------
+                    bitmapa za n. grupu blokova
+        -----------------------------------------------------
+             bitmapa inode čvorova za 0. grupu blokova
+        -----------------------------------------------------
+             bitmapa inode čvorova za 1. grupu blokova
+        -----------------------------------------------------
+                                 ...
+        -----------------------------------------------------
+             bitmapa inode čvorova za n. grupu blokova
+        -----------------------------------------------------
+                     prvi inode 0. grupe blokova
+        -----------------------------------------------------
+                     drugi inode 0. grupe blokova
+        -----------------------------------------------------
+                                 ...
+        -----------------------------------------------------
+                    zadnji inode 0. grupe blokova
+        -----------------------------------------------------
+                     prvi inode 1. grupe blokova
+        -----------------------------------------------------
+                     drugi inode 1. grupe blokova
+        -----------------------------------------------------
+                                 ...
+        -----------------------------------------------------
+                    zadnji inode 1. grupe blokova
+        -----------------------------------------------------
+                                 ...
+                                 ...
+                                 ...
+        -----------------------------------------------------
+                     prvi inode n. grupe blokova
+        -----------------------------------------------------
+                     drugi inode n. grupe blokova
+        -----------------------------------------------------
+                                 ...
+        -----------------------------------------------------
+                    zadnji inode n. grupe blokova
+        -----------------------------------------------------
+                             blok grupa 0
+        -----------------------------------------------------
+                             blok grupa 1
+        -----------------------------------------------------
+                                 ...
+        -----------------------------------------------------
+                             blok grupa n
 ```
 
 Jednostavnije:
 
 ```
-   PARTICIJA P2     | slobodnih 1024 bajtova | superblok | opisnici grupa blokova | bitmape grupe blokova | bitmape inodeova | inodeovi (inode tablica) | grupe blokova |
+           PARTICIJA P2     | slobodnih 1024 bajtova | superblok | opisnici grupa blokova | bitmape grupe blokova | bitmape inodeova | inodeovi (inode tablica) | grupe blokova |
 ```
 
 Postoji još par [podatkovnih struktura u *EXT4* datotečnom sustavu](https://blogs.oracle.com/linux/post/understanding-ext4-disk-layout-part-2), ali se u njih neće ulaziti.

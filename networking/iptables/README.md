@@ -15,40 +15,40 @@ Alat *iptables* se može koristiti za prosljeđivanje, filtriranje ili modificir
 Jednostavni tok mrežnih paketa kroz jedan Linux sustav:
 
 ```
-                               XXXXXXXXXXXXXXXXXX
-                             XXX     Network    XXX
-                               XXXXXXXXXXXXXXXXXX
-                                       +
-                                       |
-                                       v
- +-------------+              +------------------+
- |table: filter| <---+        | table: nat       |
- |chain: INPUT |     |        | chain: PREROUTING|
- +-----+-------+     |        +--------+---------+
-       |             |                 |
-       v             |                 v
- [local process]     |           ****************          +--------------+
-       |             +---------+ Routing decision +------> |table: filter |
-       v                         ****************          |chain: FORWARD|
-****************                                           +------+-------+
-Routing decision                                                  |
-****************                                                  |
-       |                                                          |
-       v                        ****************                  |
-+-------------+       +------>  Routing decision  <---------------+
-|table: nat   |       |         ****************
-|chain: OUTPUT|       |               +
-+-----+-------+       |               |
-      |               |               v
-      v               |      +-------------------+
-+--------------+      |      | table: nat        |
-|table: filter | +----+      | chain: POSTROUTING|
-|chain: OUTPUT |             +--------+----------+
-+--------------+                      |
-                                      v
-                               XXXXXXXXXXXXXXXXXX
-                             XXX    Network     XXX
-                               XXXXXXXXXXXXXXXXXX
+                                       XXXXXXXXXXXXXXXXXX
+                                     XXX     Network    XXX
+                                       XXXXXXXXXXXXXXXXXX
+                                               +
+                                               |
+                                               v
+         +-------------+              +------------------+
+         |table: filter| <---+        | table: nat       |
+         |chain: INPUT |     |        | chain: PREROUTING|
+         +-----+-------+     |        +--------+---------+
+               |             |                 |
+               v             |                 v
+         [local process]     |           ****************          +--------------+
+               |             +---------+ Routing decision +------> |table: filter |
+               v                         ****************          |chain: FORWARD|
+        ****************                                           +------+-------+
+        Routing decision                                                  |
+        ****************                                                  |
+               |                                                          |
+               v                        ****************                  |
+        +-------------+       +------>  Routing decision  <---------------+
+        |table: nat   |       |         ****************
+        |chain: OUTPUT|       |               +
+        +-----+-------+       |               |
+              |               |               v
+              v               |      +-------------------+
+        +--------------+      |      | table: nat        |
+        |table: filter | +----+      | chain: POSTROUTING|
+        |chain: OUTPUT |             +--------+----------+
+        +--------------+                      |
+                                              v
+                                       XXXXXXXXXXXXXXXXXX
+                                     XXX    Network     XXX
+                                       XXXXXXXXXXXXXXXXXX
 ```
 
 Shema prikazuje korištenje tablica *filter* i *nat* od kojih svaki ima po tri lanca. Primjerice ako koristimo Linux na običnom računalu i neki proces (aplikacija) prisluškuje na portu 30000, paket će prvo doći odozgora iz mreže i proći kroz pravila lanca *PREROUTING* tablice *nat* koji će odlučiti što će s njim. Kako je paket namijenjen samom računalu on će skrenuti lijevo (osim ako lanac *PREROUTING* nije drugačije rekao). Zatim će proći kroz pravila lanca *INPUT* tablice *filter* i na kraju doći do procesa koji prisluškuje na portu 30000.
