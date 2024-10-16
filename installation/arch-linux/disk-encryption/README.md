@@ -19,17 +19,20 @@ Potrebno je postaviti raspored tipkovnice (npr. ```loadkeys croat```), font (npr
 Disk mora biti na sljedeći način particioniran:
 
 ```
-        GPT SHEMA
-        +-----------------------+-----------------------+-----------------------+
-        | EFI particija         | BOOT particija        | LUKS enkriptirana     |
-        |                       |                       | ROOT particija        |
-        | /efi/                 | /boot/                |                       |
-        |                       |                       | /                     |
-        |                       |                       |                       |
-        |                       |                       | /dev/mapper/root      |
-        |                       |                       |                       |
-        |                       |                       |                       |
-        +-----------------------+-----------------------+-----------------------+
+        GPT SHEMA DISKA 1
+        +---------------------------------------+---------------------------------------+---------------------------------------+
+        | EFI particija                         | BOOT particija                        | LUKS enkriptirana ROOT particija      |
+        |                                       |                                       |                                       |
+        | FAT32: UUID=AAAA-AAAA                 | EXT4: UUID=AAAA-1111-1111-1111        | EXT4: UUID=AAAA-2222-2222-2222        |
+        | /efi/                                  | /boot/                                | /                                     |
+        |                                       |                                       |                                       |
+        |   - EFI/grub_uefi/grubx64.efi           |   - vmlinuz-linux                     |                                       |
+        |                                       |   - initramfs-linux.img               |                                       |
+        |                                       |   - initramfs-linux-fallback.img      |                                       |
+        |                                       |   - [amd-ucode.img ili                |                                       |
+        |                                       |      intel-ucode.img ili ništa]       |                                       |
+        |                                       |                                       |                                       |
+        +---------------------------------------+---------------------------------------+---------------------------------------+
 ```
 
 **Potrebno je uočiti da se ovdje sama Linux jezgra ne enkriptira (jer se nalazi na zasebnoj BOOT particiji), u ovom slučaju Linux jezgra prilikom inicijalizacije montira i otključava enkriptiranu particiju.**
@@ -215,7 +218,7 @@ Bootloader treba Linux jezgri proslijediti parametre za otključavanje ispravne 
 
 ```
 ...
-LINUX_KERNEL_PARAMETERS="... cryptdevice=UUID=[UUID enkriptirane particije]:[ime mapirane dekriptirane particije] root=/dev/mapper/[ime mapirane dekriptirane particije] ..."
+GRUB_CMDLINE_LINUX="... cryptdevice=UUID=[UUID enkriptirane particije]:[ime mapirane dekriptirane particije] root=/dev/mapper/[ime mapirane dekriptirane particije] ..."
 ...
 ```
 
@@ -251,37 +254,73 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 **ZNAČAJKA OS-PROBER NE FUNKCIONIRA DOBRO KADA SE KORISTI S ENKRIPTIRANE PARTICIJE, GRUB ZAPISE DRUGIH OPERACIJSKIH SUSTAVA POTREBNO JE RUČNO DODATI!**
 
-##### Dodatak: Dodavanje vlastitih zapisa u GRUB bez korištenja os-prober-a za svrhu Dual Bootinga
+##### Dodatak: Dodavanje vlastitih zapisa u GRUB bez korištenja os-probera za svrhu Dual Bootinga
 
-Dodavanje vlastitih zapisa u GRUB može se napraviti uređivanjem datoteke */etc/grub.d/40_custom*. Za početak, potrebno je saznati UUID-ove ostalih diskova i particija:
+Dodavanje vlastitih zapisa u GRUB može se napraviti uređivanjem datoteke */etc/grub.d/40_custom*. Argumenti jezgre u *GRUB_CMDLINE_LINUX* se na zapisima u ovoj datoteci **ne primjenjuju**.
+
+Za početak, potrebno je saznati UUID-ove ostalih diskova i particija:
 
 ```
 blkid
 ```
 
-Primjerice, za zapis koji **pokazuje na Linux jezgru** (*/boot je ovdje zasebna particija*) koju treba učitati (*vmlinuz-linux*) i initramfs (initramfs-linux.img) koje se obično nalaze u */boot* direktoriju, to se može napraviti dodavanjem sljedećeg koda ispod *exec tail* linije:
+Šablona za dodavanje vlastitih GRUB zapisa u */etc/grub/40_custom* navedena je ispod.
+
+Za dodavanje zapisa koji **pokazuje na Linux jezgru**:
 
 ```
-menuentry 'Linux Kernel' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-[UUID BOOT particije gdje se nalazi Linux jezgra]' {
-
+menuentry 'Second Arch Linux' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-[UUID BOOT particije gdje se nalazi Linux jezgra]' {
+	load_video
+	set gfxpayload=keep
 	insmod gzio
 	insmod part_gpt
 	insmod ext2
 	search --no-floppy --fs-uuid --set=root [UUID BOOT particije gdje se nalazi Linux jezgra]
-	echo 'Loading Linux linux ...'
-	linux /vmlinuz-linux root=[UUID BOOT particije gdje se nalazi Linux jezgra] rw  loglevel=3 quiet
-	echo 'Loading initial ramdisk ...'
-	initrd [/amd-ucode.img, /intel-ucode.img ili ništa] /initramfs-linux.img
-
+	echo	'Loading Linux linux ...'
+	linux	[lokacija 'vmlinuz-linux'] root=UUID=[UUID BOOT particije gdje se nalazi Linux jezgra] rw  loglevel=3 quiet
+	echo	'Loading initial ramdisk ...'
+	initrd	[lokacija 'amd-ucode.img', 'intel-ucode.img' ili ništa] [lokacija 'initramfs-linux.img']
+}
+submenu 'Advanced options for Second Arch Linux' $menuentry_id_option 'gnulinux-advanced-[UUID BOOT particije gdje se nalazi Linux jezgra]' {
+	menuentry 'Arch Linux, with Linux linux' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-linux-advanced-[UUID BOOT particije gdje se nalazi Linux jezgra]' {
+		load_video
+		set gfxpayload=keep
+		insmod gzio
+		insmod part_gpt
+		insmod ext2
+		search --no-floppy --fs-uuid --set=root [UUID BOOT particije gdje se nalazi Linux jezgra]
+		echo	'Loading Linux linux ...'
+		linux	[lokacija 'vmlinuz-linux'] root=UUID=[UUID BOOT particije gdje se nalazi Linux jezgra] rw  loglevel=3 quiet
+		echo	'Loading initial ramdisk ...'
+		initrd	[lokacija 'amd-ucode.img', 'intel-ucode.img' ili ništa] [lokacija 'initramfs-linux.img']
+	}
+	menuentry 'Second Arch Linux, with Linux linux (fallback initramfs)' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-linux-[UUID BOOT particije gdje se nalazi Linux jezgra]' {
+		load_video
+		set gfxpayload=keep
+		insmod gzio
+		insmod part_gpt
+		insmod ext2
+		search --no-floppy --fs-uuid --set=root [UUID BOOT particije gdje se nalazi Linux jezgra]
+		echo	'Loading Linux linux ...'
+		linux	[lokacija 'vmlinuz-linux'] root=UUID=[UUID BOOT particije gdje se nalazi Linux jezgra] rw  loglevel=3 quiet
+		echo	'Loading initial ramdisk ...'
+		initrd	[lokacija 'amd-ucode.img', 'intel-ucode.img' ili ništa] [lokacija 'initramfs-linux-fallback.img']
+	}
 }
 ```
 
 Objašnjenje pojmova:
 
-- *'My Linux Entry' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-[UUID BOOT particije gdje se nalazi Linux jezgra]'*
+- *menuentry* opisuje jedan zapis GRUB bootloadera
+- *submenu* opisuje zapis koji sadrži više zapisa
+- *'Ime Zapisa' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-[UUID BOOT particije gdje se nalazi Linux jezgra]'*
 	- ime zapisa koje će biti vidljivo na ekranu
 	- *--class [ime klase]* - koriste se za grupiranje zapisa, proizvoljnog su imena
 	- *$menuentry_id_option '[Identifikator za zapis]'* - makro koji sprema jedinstveni identifikator za navedeni zapis koji će GRUB interno koristiti
+- *load_video*
+	- učitava grafički upravljački program za prikaz slike (*eng. splash screen*) ako je ima dok se Linux jezgra učitava
+- *set gfxpayload=keep* (više [ovdje](https://www.gnu.org/software/grub/manual/grub/html_node/gfxpayload.html))
+	- zadržava rezoluciju grafičkog prikaza koji je imao GRUB tijekom pokretanja Linux jezgre
 - *insmod gzio, insmod part_gpt, insmod ext2* (više [ovdje](https://www.gnu.org/software/grub/manual/grub/grub.html#insmod))
 	- ubacivanje modula za podršku rada s GZip, podršku rada s GTP particijama i podršku rada s EXT2/EXT3/EXT4 datotečnim sustavima, lista GRUB modula i njihova objašnjenja se mogu naći [ovdje](https://www.linux.org/threads/understanding-the-various-grub-modules.11142/)
 - *search --no-floppy --fs-uuid --set=root [UUID BOOT particije gdje se nalazi Linux jezgra]* (više [ovdje](https://www.gnu.org/software/grub/manual/grub/grub.html#search))
@@ -299,14 +338,14 @@ Objašnjenje pojmova:
 - *initrd [/amd-ucode.img, /intel-ucode.img ili ništa] /initramfs-linux.img* (više [ovdje](https://www.gnu.org/software/grub/manual/grub/grub.html#initrd))
 	- učitava redom *ramfs* datotečne sustave koji će se privremeno montirati tijekom inicijalizacije
 
-Za zapis koji **pokazuje na Windows Boot Manager** (*/efi/Microsoft/Boot/bootmgfw.efi* na zasebnoj particiji) kojeg treba učitati kod glasi ovako:
+Za dodavanje zapisa koji **pokazuje na Windows Boot Manager**:
 
 ```
 menuentry 'Windows Boot Manager' {
 	insmod part_gpt
 	insmod fat
 	search --no-floppy --fs-uuid --set=root [UUID EFI datotečnog sustava gdje se nalazi Window Boot Manager]
-	chainloader /EFI/Microsoft/Boot/bootmgfw.efi
+	chainloader [Lokacija Windows bootloadera]
 }
 ```
 
@@ -319,7 +358,7 @@ menuentry 'Windows Boot Manager' {
 	- *--no-floppy* - preskače pretraživanje Floppy diskova jer su spori
 	- *--fs-uuid* - pretražuj datotečne sustave po njihovim UUID-ovima
 	- *--set=root* - ako se pronađe traženi datotečni sustav po UUID-u, postavi korijenski direktorij na početak pronađenog datotečnog sustava
-- *chainloader /efi/Microsoft/Boot/bootmgfw.efi* (više [ovdje](https://www.gnu.org/software/grub/manual/grub/grub.html#chainloader))
+- *chainloader [Lokacija Windows bootloadera] (više [ovdje](https://www.gnu.org/software/grub/manual/grub/grub.html#chainloader))
 	- učitava Windowsov bootloader (pretpostavljajući da se tu nalazi) i prepušta mu kontrolu
 
 Nakon uređivanja */etc/grub.d/40-custom* datoteke potrebno je ponovno izgenerirati konfiguraciju naredbom:
@@ -327,6 +366,122 @@ Nakon uređivanja */etc/grub.d/40-custom* datoteke potrebno je ponovno izgenerir
 ```
 grub-mkconfig -o /boot/grub/grub.cfg'
 ```
+
+#### Konkretni primjer
+
+Konfiguracija diskova spojenih na računalo je sljedeća:
+
+```
+        GPT SHEMA DISKA 1 (UREĐUJEMO POSTAVKE ZA GRUB BOOTLOADER NA OVOM DISKU)
+        PRILIKOM POKRETANJA RAČUNALA UČITAVA SE OVAJ BOOTLOADER (grubx64.efi)
+        +---------------------------------------+---------------------------------------+---------------------------------------+
+        | EFI particija                         | BOOT particija                        | LUKS enkriptirana ROOT particija      |
+        |                                       |                                       |                                       |
+        | FAT32: UUID=AAAA-AAAA                 | EXT4: UUID=AAAA-1111-1111-1111        | EXT4: UUID=AAAA-2222-2222-2222        |
+        | /efi/                                  | /boot/                                | /                                     |
+        |                                       |                                       |                                       |
+        |   - EFI/grub_uefi/grubx64.efi           |   - vmlinuz-linux                     |                                       |
+        |                                       |   - initramfs-linux.img               |                                       |
+        |                                       |   - initramfs-linux-fallback.img      |                                       |
+        |                                       |   - amd-ucode.img                     |                                       |
+        |                                       |                                       |                                       |
+        +---------------------------------------+---------------------------------------+---------------------------------------+
+
+        GPT SHEMA DISKA 2
+        +---------------------------------------+---------------------------------------+---------------------------------------+
+        | EFI particija                         | ROOT particija                        | HOME particija                        |
+        |                                       |                                       |                                       |
+        | FAT32: UUID=AAAA-AAAA                 | EXT4: UUID=BBBB-1111-1111-1111        | EXT4: UUID=BBBB-2222-2222-2222        |
+        | /efi/                                  | /                                     | /home                                 |
+        |                                       |                                       |                                       |
+        |   - EFI/grub_uefi/grubx64.efi           |   - boot/vmlinuz-linux                |                                       |
+        |                                       |   - boot/initramfs-linux.img          |                                       |
+        |                                       |   - boot/initramfs-linux-fallback.img |                                       |
+        |                                       |   - boot/amd-ucode.img                |                                       |
+        |                                       |                                       |                                       |
+        +---------------------------------------+---------------------------------------+---------------------------------------+
+
+        GPT SHEMA DISKA 3
+        +---------------------------------------+---------------------------------------+---------------------------------------+
+        | EFI particija                         | Microsoft Reservered Patition         | Basic Data Patition C:                |
+        |                                       |                                       |                                       |
+        | FAT32: UUID=CCCC-CCCC                 | EXT4: UUID=CCCC-1111-1111-1111        | EXT4: UUID=CCCC-2222-2222-2222        |
+        | /efi/                                  |                                       |                                       |
+        |                                       |                                       |                                       |
+        |   - EFI/Microsoft/Boot/bootmgfw.efi    |                                       |                                       |
+        |                                       |                                       |                                       |
+        +---------------------------------------+---------------------------------------+---------------------------------------+
+```
+
+Objašnjenje datoteka:
+
+- *grubx64.efi* i *bootmgfw.efi* - GRUB i Windowsov bootloader
+- *vmlinuz-linux* - Linux jezgra
+- *initramfs-linux.img*, *initramfs-linux-fallback.img*, *amd-ucode.img* i *intel-ucode.img* - pripremne datoteke Linux jezgre prije montiranja ROOT-a i mikrokodovi za procesore
+
+Nakon postavljanje enkriptirane LUKS ROOT particije i instalacije Linuxa, GRUB-a enkriptirane particije na disku 1 bez korištenje *os-probera*, u GRUB meniju se ne pojavljuju zapisi za pokretanje Linux jezgre na disku 2 ili učitavanja Windows bootloadera na disku 3. Da bi se dodali zapisi potrebno je urediti datoteku */etc/grub.d/40-custom* nadodajući joj sljedeći kod:
+
+```
+...
+menuentry 'Linux kernel' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-BBBB-1111-1111-1111' {
+	load_video
+	set gfxpayload=keep
+	insmod gzio
+	insmod part_gpt
+	insmod ext2
+	search --no-floppy --fs-uuid --set=root BBBB-1111-1111-1111
+	echo	'Loading Linux linux ...'
+	linux	boot/vmlinuz-linux root=UUID=BBBB-1111-1111-1111 rw  loglevel=3 quiet
+	echo	'Loading initial ramdisk ...'
+	initrd	boot/amd-ucode.img boot/initramfs-linux.img
+}
+submenu 'Advanced options for Linux kernel' $menuentry_id_option 'gnulinux-advanced-BBBB-1111-1111-1111' {
+	menuentry 'Linux kernel, with Linux linux' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-linux-advanced-BBBB-1111-1111-1111' {
+		load_video
+		set gfxpayload=keep
+		insmod gzio
+		insmod part_gpt
+		insmod ext2
+		search --no-floppy --fs-uuid --set=root BBBB-1111-1111-1111
+		echo	'Loading Linux linux ...'
+		linux	boot/vmlinuz-linux root=UUID=BBBB-1111-1111-1111 rw  loglevel=3 quiet
+		echo	'Loading initial ramdisk ...'
+		initrd	boot/amd-ucode.img boot/initramfs-linux.img
+	}
+	menuentry 'Linux kernel, with Linux linux (fallback initramfs)' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-linux-BBBB-1111-1111-1111' {
+		load_video
+		set gfxpayload=keep
+		insmod gzio
+		insmod part_gpt
+		insmod ext2
+		search --no-floppy --fs-uuid --set=root BBBB-1111-1111-1111
+		echo	'Loading Linux linux ...'
+		linux	boot/vmlinuz-linux root=UUID=BBBB-1111-1111-1111 rw  loglevel=3 quiet
+		echo	'Loading initial ramdisk ...'
+		initrd	boot/amd-ucode.img boot/initramfs-linux-fallback.img
+	}
+}
+menuentry 'Windows Boot Manager' {
+	insmod part_gpt
+	insmod fat
+	search --no-floppy --fs-uuid --set=root CCCC-CCCC
+	chainloader EFI/Microsoft/Boot/bootmgfw.efi
+}
+```
+
+Primjena postavki:
+
+```
+grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+Potrebno je uočiti da će bootloader na prvom disku nakon primjene postavki pokazivati na:
+
+- Linux jezgru na prvom disku (automatski se dodaje svakim izvršavanjem *grub-mkconfig* naredbe)
+- Linux jezgru na drugom disku (definirano prvim *menuentryjem* u *40_custom* datoteci)
+- Windows bootloader na trećem disku (definirano posljednjim *menuentryjem* u *40_custom* datoteci)
+
+Iako je moguće da GRUB bootloader na prvom disku pokazuje na GRUB bootloader na drugom disku, u ovom slučaju se može automatski učitati Linux jezgra na drugom disku umjesto da ulazimo u drugi GRUB bootloader.
 
 ### Izlaz, odmontiranje i ponovno pokretanje
 
@@ -366,7 +521,7 @@ Disk mora biti na sljedeći način particioniran:
         +-----------------------+-----------------------+
         | EFI particija         | LUKS enkriptirana     |
         |                       | ROOT particija        |
-        | /efi/                 |                       |
+        | /efi/                  |                       |
         |                       | /                     |
         |                       |                       |
         |                       | /dev/mapper/root      |
