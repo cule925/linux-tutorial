@@ -12,7 +12,7 @@ Preporučuje se korištenje žičane konekcije (Ethernet). Bežično spajanje se
 
 ### Raspored tipkovnice, font, vremenska zona i NTP poslužitelj
 
-Potrebno je postaviti raspored tipkovnice (npr. ```loadkeys croat```), font (npr. ```setfont Lat2-Terminus16```) i vremensku zonu (```timedatectl set-timezone Europe/Zagreb```) po želji te uključiti korištenje NTP poslužitelja.
+Potrebno je postaviti raspored tipkovnice (npr. ```loadkeys croat```), font (npr. ```setfont Lat2-Terminus16```) i vremensku zonu (```timedatectl set-timezone Europe/Zagreb```) po želji te uključiti korištenje NTP poslužitelja (```timedatectl set-ntp true```).
 
 ### Particioniranje diska
 
@@ -262,7 +262,7 @@ blkid
 Primjerice, za zapis koji **pokazuje na Linux jezgru** (*/boot je ovdje zasebna particija*) koju treba učitati (*vmlinuz-linux*) i initramfs (initramfs-linux.img) koje se obično nalaze u */boot* direktoriju, to se može napraviti dodavanjem sljedećeg koda ispod *exec tail* linije:
 
 ```
-menuentry 'My Linux Entry' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-[UUID BOOT particije gdje se nalazi Linux jezgra]' {
+menuentry 'Linux Kernel' --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-[UUID BOOT particije gdje se nalazi Linux jezgra]' {
 
 	insmod gzio
 	insmod part_gpt
@@ -302,11 +302,11 @@ Objašnjenje pojmova:
 Za zapis koji **pokazuje na Windows Boot Manager** (*/efi/Microsoft/Boot/bootmgfw.efi* na zasebnoj particiji) kojeg treba učitati kod glasi ovako:
 
 ```
-menuentry 'My Windows Entry' {
+menuentry 'Windows Boot Manager' {
 	insmod part_gpt
 	insmod fat
 	search --no-floppy --fs-uuid --set=root [UUID EFI datotečnog sustava gdje se nalazi Window Boot Manager]
-	chainloader /efi/Microsoft/Boot/bootmgfw.efi
+	chainloader /EFI/Microsoft/Boot/bootmgfw.efi
 }
 ```
 
@@ -322,7 +322,11 @@ menuentry 'My Windows Entry' {
 - *chainloader /efi/Microsoft/Boot/bootmgfw.efi* (više [ovdje](https://www.gnu.org/software/grub/manual/grub/grub.html#chainloader))
 	- učitava Windowsov bootloader (pretpostavljajući da se tu nalazi) i prepušta mu kontrolu
 
-**Nakon uređivanja /etc/grub.d/40-custom datoteke potrebno je ponovno izgenerirati konfiguraciju naredbom 'grub-mkconfig -o /boot/grub/grub.cfg'** 
+Nakon uređivanja */etc/grub.d/40-custom* datoteke potrebno je ponovno izgenerirati konfiguraciju naredbom:
+
+```
+grub-mkconfig -o /boot/grub/grub.cfg'
+```
 
 ### Izlaz, odmontiranje i ponovno pokretanje
 
@@ -351,7 +355,7 @@ Opet, preporučuje se korištenje žičane konekcije (Ethernet). Bežično spaja
 
 ### Raspored tipkovnice, font, vremenska zona i NTP poslužitelj
 
-Potrebno je postaviti raspored tipkovnice (npr. ```loadkeys croat```), font (npr. ```setfont Lat2-Terminus16```) i vremensku zonu (```timedatectl set-timezone Europe/Zagreb```) po želji te uključiti korištenje NTP poslužitelja.
+Potrebno je postaviti raspored tipkovnice (npr. ```loadkeys croat```), font (npr. ```setfont Lat2-Terminus16```) i vremensku zonu (```timedatectl set-timezone Europe/Zagreb```) po želji te uključiti korištenje NTP poslužitelja (```timedatectl set-ntp true```).
 
 ### Particioniranje diska
 

@@ -574,13 +574,15 @@ Prilikom ponovnog pokretanja jezgreni modul *amdgpu* bi se trebao automatski uč
 
 ##### Instalacija upravljačkog programa za NVIDIA grafičke kartice
 
-Instalacija *closed source* upravljačkog programa za NVIDIA grafičke kartice radi se naredbom:
+Ovisno o [seriji](https://nouveau.freedesktop.org/CodeNames.html#NV160) [NVIDIA](https://wiki.archlinux.org/title/NVIDIA) grafičkih kartica, *open source* upravljački program se može instalirati za grafičke kartice serije Turing. Kojoj seriji grafička kartica pripada može se vidjeti naredbom ```lspci -k | grep -A 3 -E "(VGA|3D)"``` (oznaka TUxxx).
+
+Instalacija *open source* upravljačkog programa za NVIDIA grafičke kartice serije Turing radi se naredbom:
 
 ```
-pacman -S nvidia
+pacman -S nvidia-open
 ```
 
-Prilikom ponovnog pokretanja jezgreni modul *nvidia* bi se trebao automatski učitati u jezgru. Provjera jeli se to stvarno dogodilo se može napraviti naredbom ```lspci -k | grep -A 3 -E "(VGA|3D)"```. Postoji i *open source* verzija *nouveau*, ali su performanse lošije.
+Prilikom ponovnog pokretanja jezgreni modul *nvidia* bi se trebao automatski učitati u jezgru. Provjera jeli se to stvarno dogodilo se može napraviti naredbom ```lspci -k | grep -A 3 -E "(VGA|3D)"```.
 
 #### Instalacija X Window Systema i GNOME desktop okoline
 
@@ -623,10 +625,10 @@ Preporuke:
 - uređivanje *prompta* odnosno varijable okruženja *PS1* u *.bashrc* datoteci:
 	- potrebno je dati vlastitu vrijednost varijabli *PS1* u obliku ```PS1='\[\033[01;38;2;R;G;Bm\]\u@\h:\w \$\[\033[00m\] '```
 		- *R*, *G* i *B* predstavljaju intenzitete boja, rasponi su im od 0 uključivo do 255 uključivo
-	- primjerice:
+	- primjerice za crvenu boju *prompta*:
 		```
 		...
-		PS1='\[\033[01;38;2;255;165;0m\]\u@\h:\w \$\[\033[00m\] '
+		PS1='\[\033[01;38;2;255;0;0m\]\u@\h:\w \$\[\033[00m\] '
 		...
 		```
 
