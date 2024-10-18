@@ -39,7 +39,7 @@ Disk mora biti na sljedeći način particioniran:
 
 Dakle alatom *fdisk* (```fdisk [datoteka uređaja kojeg će se particionirati]```) potrebno je napraviti tri particije koristeći GPT shemu particioniranja (naredba ```g```).
 
-EFI particija mora imati sljedeće konfiguracije (naredba ```w```):
+EFI particija mora imati sljedeće konfiguracije (naredba ```n```):
 
 * broj particije: 1
 * prvi sektor: *default*
@@ -47,7 +47,7 @@ EFI particija mora imati sljedeće konfiguracije (naredba ```w```):
 
 Vrsta particije 1 se postavlja naredbom ```t```, broj vrste je 1.
 
-Boot particija mora imati sljedeće konfiguracije (naredba ```w```):
+Boot particija mora imati sljedeće konfiguracije (naredba ```n```):
 
 * broj particije: 2
 * prvi sektor: *default*
@@ -55,7 +55,7 @@ Boot particija mora imati sljedeće konfiguracije (naredba ```w```):
 
 Vrsta particije 2 se postavlja naredbom ```t```, broj vrste je 20.
 
-LUKS enkriptirana ROOT particija mora imati sljedeće konfiguracije (naredba ```w```):
+LUKS enkriptirana ROOT particija mora imati sljedeće konfiguracije (naredba ```n```):
 
 * broj particije: 3
 * prvi sektor: *default*
@@ -63,7 +63,7 @@ LUKS enkriptirana ROOT particija mora imati sljedeće konfiguracije (naredba ```
 
 Vrsta particije 3 se postavlja naredbom ```t```, broj vrste je 20.
 
-Ispis trenutne konfiguracije koja će se postaviti može se vidjeti naredbom ```p```, a konačno particioniranje izvodi se naredbom ```w```.
+Ispis trenutne konfiguracije koja će se postaviti može se vidjeti naredbom ```p```, a konačno particioniranje izvodi se naredbom ```n```.
 
 ### Enkriptiranje ROOT particije
 
@@ -108,7 +108,7 @@ Inicijalizacija ukratko i pojednostavljeno:
         +------------------------+     +----------------+
 ```
 
-Pisanje i čitanje po enkriptiranom disku radi se naredbom:
+Kako bi se moglo pisati i čitati po enkriptiranom disku, moramo ga dekriptirati. To se radi tako 'otvaranje' diska, odnosno stvaranje datoteke uređaja koja predstavlja dekriptiran uređaj (virtualni blok uređaj). U stvarnosti Linux jezgra uz podsustav *dm-crypt* rješava enkriptiranje i pisanje na stvarni disk kada se piše na virtualni disk te čitanje i dekriptiranje sa stvarnog diska kada se čita s virtualnog diska.
 
 ```
 cryptsetup open [datoteka uređaja koja predstavlja enkriptiranu particiju ROOT] [ime mapirane dekriptirane particije]
@@ -168,9 +168,9 @@ Postupak instalacije je uobičajen, sve do konfiguracije GRUB bootloadera:
 ```
 # Instalacija paketa i generiranje fstab datoteke
 pacman-key --refresh-key
-pacstrap -K /mnt/ base base-devel linux linux-firmware vim nano networkmanager grub efibootmgr os-prober dosfstools mtools
-genfstab -U /mnt/ | tee /mnt/etc/fstab
-arch-chroot /mnt/
+pacstrap -K /mnt base base-devel linux linux-firmware vim nano networkmanager grub efibootmgr os-prober dosfstools mtools
+genfstab -U /mnt | tee /mnt/etc/fstab
+arch-chroot /mnt
 
 # Postavljanje sustava
 ln -sf /usr/share/zoneinfo/Europe/Zagreb /etc/localtime
@@ -182,6 +182,7 @@ echo "LANG=en_US.UTF-8" | tee /etc/locale.conf
 echo "KEYMAP=croat" | tee /etc/vconsole.conf
 echo "FONT=Lat2-Terminus16" | tee -a /etc/vconsole.conf
 echo "krypton" | tee /etc/hostname
+echo -e "\n127.0.0.1\tlocalhost\n127.0.1.1\t$(cat /etc/hostname)\n::1\t\tip6-$(cat /etc/hostname)" | tee -a hosts
 systemctl enable NetworkManager
 passwd
 ```
@@ -531,3 +532,127 @@ Disk mora biti na sljedeći način particioniran:
 ```
 
 **Potrebno je uočiti da će se sada i Linux jezgra enkriptirati, odnosno na bootloaderu je zadatak otključati enkriptiranu particiju.**
+
+Postupak je sličan kao i za prethodnu shemu s neenkriptiranom zasebnom BOOT particijom, postavljanje rasporeda tipkovnice, fonta i vremenske zone te korištenje NTP poslužitelja:
+
+```
+loadkeys croat
+setfont Lat2-Terminus16
+timedatectl set-timezone Europe/Zagreb
+timedatectl set-ntp true
+```
+
+Particioniranje diska radi se uz pomoć alata *fdisk*.
+
+EFI particija mora imati sljedeće konfiguracije (naredba ```n```):
+
+* broj particije: 1
+* prvi sektor: *default*
+* zadnji sektor: +512M
+
+Vrsta particije 1 se postavlja naredbom ```t```, broj vrste je 1.
+
+LUKS enkriptirana ROOT particija mora imati sljedeće konfiguracije (naredba ```n```):
+
+* broj particije: 2
+* prvi sektor: *default*
+* zadnji sektor: *default*
+
+Vrsta particije 2 se postavlja naredbom ```t```, broj vrste je 20.
+
+Pisanje promjena na disk radi se naredbom ```w```.
+
+Formatiranje ROOT particije kao LUKS i njeno mapiranje na dekriptirani virtualni uređaj:
+
+```
+cryptsetup -v --pbkdf pbkdf2 luksFormat [datoteka uređaja koja predstavlja particiju ROOT koja će biti enkriptirana]
+cryptsetup open [datoteka uređaja koja predstavlja enkriptiranu particiju ROOT] [ime mapirane dekriptirane particije]
+```
+
+**BITAN DIO.** Ovdje treba uočiti da se umjesto Argon2 algoritma za derivaciju ključa koristi PBKDF2 jer sami GRUB bootloader ne podržava Argon2.
+
+Onda se formatira dekriptirana ROOT particija i EFI particija:
+
+```
+mkfs.ext4 /dev/mapper/[ime mapirane dekriptirane particije]
+mount /dev/mapper/[ime mapirane dekriptirane particije] /mnt
+mkfs.vfat -F 32 [datoteka uređaja koja predstavlja EFI particiju]
+mount --mkdir [datoteka uređaja koja predstavlja EFI particiju] /mnt/efi
+```
+
+Opet, postupak instalacije je uobičajen sve do bootloadera:
+
+```
+### Instalacija paketa i generiranje fstab datoteke
+pacman-key --refresh-key
+pacstrap -K /mnt/ base base-devel linux linux-firmware vim nano networkmanager grub efibootmgr os-prober dosfstools mtools
+genfstab -U /mnt/ | tee /mnt/etc/fstab
+arch-chroot /mnt/
+
+#### Postavljanje sustava
+ln -sf /usr/share/zoneinfo/Europe/Zagreb /etc/localtime
+hwclock --systohc
+sed -i 's/^#\s*\(en_US.UTF-8\sUTF-8\)/\1/' /etc/locale.gen
+sed -i 's/^#\s*\(hr_HR.UTF-8\sUTF-8\)/\1/' /etc/locale.gen
+locale-gen
+echo "LANG=en_US.UTF-8" | tee /etc/locale.conf
+echo "KEYMAP=croat" | tee /etc/vconsole.conf
+echo "FONT=Lat2-Terminus16" | tee -a /etc/vconsole.conf
+echo "krypton" | tee /etc/hostname
+systemctl enable NetworkManager
+passwd
+```
+
+### Postavljanje initramfs datotečnog sustava
+
+HOOK-ovi moraju biti isti kao i u prethodnom slučaju, dakle u *mkinitcpio.conf* se mora nalaziti ovakav redak:
+
+```
+...
+HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont block encrypt filesystems fsck)
+...
+```
+
+Regeneracija *initramfs* se radi naredbom ```mkinitcpio -P```.
+
+### Konfiguracija GRUB bootloadera
+
+Instalacija GRUB bootloadera radi se naredbom:
+
+```
+grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=grub_uefi --recheck
+```
+
+**BITAN DIO.** U datoteku */etc/default/grub* potrebno je dodati dodatni Linux jezgrene parametre **i omogućiti GRUB-u pokretanje Linux jezgre s enkriptiranog diska**. Kako u ovom slučaju GRUB pristupa enkriptiranoj ROOT particiji, tražit će se lozinka s kojom će GRUB dekriptirati particiju i učitati Linux jezgru. Sam GRUB dosta sporo to izvodi. Također nakon učitavanje Linux jezgre u RAM i *initramfs* datotečnog sustava, ona će također htjeti pristupiti enkriptiranoj particiji kako bi montirala ROOT što znači da će se opet tražit upis lozinke. Ovo znači da dva puta zaredom upisujemo lozinku za pristup disku. Ovo se može riješiti dodavanjem ključa. 
+
+Dakle, prvo potrebno je generirati ključ:
+
+```
+dd bs=512 count=4 if=/dev/random iflag=fullblock | install -m 0600 /dev/stdin /etc/cryptsetup-keys.d/cryptroot.key
+cryptsetup -v luksAddKey [datoteka uređaja koja predstavlja enkriptiranu particiju ROOT] /etc/cryptsetup-keys.d/cryptroot.key
+```
+
+Onda je potrebno u datoteku */etc/default/grub* osigurati da se u njoj nalaze sljedeće linije:
+
+```
+...
+GRUB_CMDLINE_LINUX="... cryptdevice=UUID=[UUID enkriptirane particije]:[ime mapirane dekriptirane particije] root=/dev/mapper/[ime mapirane dekriptirane particije] cryptkey=rootfs:/etc/cryptsetup-keys.d/cryptroot.key ..."
+...
+GRUB_ENABLE_CRYPTODISK=y
+...
+```
+
+Primjena konfiguracije radi se naredbom:
+
+```
+grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+Na kraju, potrebno je ponovno pokrenuti sustav:
+
+```
+exit
+umount -R /mnt
+cryptsetup close [ime mapirane dekriptirane particije]
+reboot
+```

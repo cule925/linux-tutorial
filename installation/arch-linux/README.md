@@ -302,19 +302,19 @@ pacman-key --refresh-key
 Zatim je potrebno uz pomoć alata [*pacstrap*](https://wiki.archlinux.org/title/Pacstrap) instalirati Linux jezgru, datoteke za firmware i osnovne alate za rad s Linuxom:
 
 ```
-pacstrap -K /mnt/ base base-devel linux linux-firmware
+pacstrap -K /mnt base base-devel linux linux-firmware
 ```
 
 Alat *pacstrap* će automatski instalirati jezgru u */boot direktoriju*. Također, *pacstrap* će stvoriti *initramfs.img* datoteku uz pomoć *mkinitcpio* alata. Nakon instalacije, potrebno je stvoriti *fstab* datoteku. Datoteka *fstab* govori kako montirati particije prilikom svakog ponovnog pokretanja sustava. To se može napraviti naredbom:
 
 ```
-genfstab -U /mnt/ | tee /mnt/etc/fstab
+genfstab -U /mnt | tee /mnt/etc/fstab
 ```
 
 Opcija *-U* definira particije po njihovim UUID-ovima umjesto nazivima. Nakon ovoga potrebno je promijeniti korijenski direktorij naredbom:
 
 ```
-arch-chroot /mnt/
+arch-chroot /mnt
 ```
 
 Naredba *arch-chroot* mijenja korijenski direktorij za sve buduće procese koji se budu pokretali. Ovo se može smatrati nekom vrstom izolacije.
