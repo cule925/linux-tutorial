@@ -1,6 +1,6 @@
 # ENKRIPCIJA CJELOKUPNOG SUSTAVA
 
-Sljedeća enkripcija diska napravljena je korištenjem [*dm-crypt* Linux podsustava](https://wiki.archlinux.org/title/Dm-crypt/Device_encryption). Alat naredbenog retka koji služi za interakciju s *dm-crypt* podsustavom naziva se *cryptsetup*. Podsustav *dm-crypt* nudi značajku LUKS (*eng. Linux Unified Key Setup*) koji apstrahira particiju koja se enkriptira i njezine kriptografske ključeve.
+Sljedeća enkripcija diska napravljena je korištenjem [*dm-crypt* Linux podsustava](https://wiki.archlinux.org/title/Dm-crypt/Device_encryption). Alat naredbenog retka koji služi za interakciju s [*dm-crypt*](https://wiki.archlinux.org/title/Dm-crypt/System_configuration) podsustavom naziva se *cryptsetup*. Podsustav *dm-crypt* nudi značajku LUKS (*eng. Linux Unified Key Setup*) koji apstrahira particiju koja se enkriptira i njezine kriptografske ključeve.
 
 ## Primjer enkripcije ROOT particije na disku bez enkripcije Linux jezgre (UEFI + GPT)
 
@@ -130,6 +130,7 @@ U trenutku otvaranja enkriptirane particije zatražit će se upis lozinke, postu
         |   ENKRIPTIRANOG KLJUČA   |        |    KLJUČA IZ UTORA    |
         +--------------------------+        +-----------------------+
                      ||                                        /\      Ako sažetci nisu jednaki, idi na sljedeći utor
+                     ||                                        ||
                      \/                                        ||
         +------------------------------+    +-------------------------------------+
         |     IZRAČUNAVANJE SAŽETKA    |--->|  USPOREDBA IZRAČUNATOG SAŽETKA SA   |
@@ -222,6 +223,8 @@ Bootloader treba Linux jezgri proslijediti parametre za otključavanje ispravne 
 GRUB_CMDLINE_LINUX="... cryptdevice=UUID=[UUID enkriptirane particije]:[ime mapirane dekriptirane particije] root=/dev/mapper/[ime mapirane dekriptirane particije] ..."
 ...
 ```
+
+Vrijednosti varijable *GRUB_CMDLINE_LINUX* se prosljeđuju kao argumenti kod pokretanje Linux jezgre. Argument *cryptdevice* označava enkriptiranu ROOT particiju (uz pomoć UUID-a) i ime dekriptirane particije koja će se predstaviti kao mapirani virtualni blok uređaj na lokaciji */dev/mapper/*, a argument *root* specificira particiju (virtualni blok uređaj) kojeg se montira kao ROOT, u ovom slučaju je to dekriptirana ROOT particija.
 
 UUID enkriptiranog diska se može dobiti naredbom:
 
@@ -505,16 +508,6 @@ Problem ovakve konfiguracije je što se samo enkriptira *ROOT* particija, dok *B
 
 Proces instalacije Arch Linuxa s enkriptiranom ROOT particijom je sličan je prethodnoj instalaciji uz par dodatnih naredbi i konfiguracija.
 
-### Spajanje na mrežu
-
-Opet, preporučuje se korištenje žičane konekcije (Ethernet). Bežično spajanje se može izvesti naredbom ```iwctl``` (upute za korištenje su u osnovnim uputama za instalaciju Arch Linuxa).
-
-### Raspored tipkovnice, font, vremenska zona i NTP poslužitelj
-
-Potrebno je postaviti raspored tipkovnice (npr. ```loadkeys croat```), font (npr. ```setfont Lat2-Terminus16```) i vremensku zonu (```timedatectl set-timezone Europe/Zagreb```) po želji te uključiti korištenje NTP poslužitelja (```timedatectl set-ntp true```).
-
-### Particioniranje diska
-
 Disk mora biti na sljedeći način particioniran:
 
 ```
@@ -531,36 +524,21 @@ Disk mora biti na sljedeći način particioniran:
         +-----------------------+-----------------------+
 ```
 
-**Potrebno je uočiti da će se sada i Linux jezgra enkriptirati, odnosno na bootloaderu je zadatak otključati enkriptiranu particiju.**
+Postupak je sličan kao i za prethodnu shemu s neenkriptiranom zasebnom BOOT particijom. Za alat fdisk, sljedeće su specifikacije:
 
-Postupak je sličan kao i za prethodnu shemu s neenkriptiranom zasebnom BOOT particijom, postavljanje rasporeda tipkovnice, fonta i vremenske zone te korištenje NTP poslužitelja:
-
-```
-loadkeys croat
-setfont Lat2-Terminus16
-timedatectl set-timezone Europe/Zagreb
-timedatectl set-ntp true
-```
-
-Particioniranje diska radi se uz pomoć alata *fdisk*.
-
-EFI particija mora imati sljedeće konfiguracije (naredba ```n```):
+EFI particija mora imati sljedeće konfiguracije:
 
 * broj particije: 1
 * prvi sektor: *default*
 * zadnji sektor: +512M
-
-Vrsta particije 1 se postavlja naredbom ```t```, broj vrste je 1.
+* vrsta particije: EFI (EFI System)
 
 LUKS enkriptirana ROOT particija mora imati sljedeće konfiguracije (naredba ```n```):
 
 * broj particije: 2
 * prvi sektor: *default*
 * zadnji sektor: *default*
-
-Vrsta particije 2 se postavlja naredbom ```t```, broj vrste je 20.
-
-Pisanje promjena na disk radi se naredbom ```w```.
+* vrsta particije: 20 (Linux filesystem)
 
 Formatiranje ROOT particije kao LUKS i njeno mapiranje na dekriptirani virtualni uređaj:
 
@@ -569,9 +547,9 @@ cryptsetup -v --pbkdf pbkdf2 luksFormat [datoteka uređaja koja predstavlja part
 cryptsetup open [datoteka uređaja koja predstavlja enkriptiranu particiju ROOT] [ime mapirane dekriptirane particije]
 ```
 
-**BITAN DIO.** Ovdje treba uočiti da se umjesto Argon2 algoritma za derivaciju ključa koristi PBKDF2 jer sami GRUB bootloader ne podržava Argon2.
+**BITAN DIO.** Ovdje treba uočiti da se umjesto Argon2 algoritma za derivaciju ključa koristi PBKDF2 jer sami GRUB bootloader ne podržava Argon2 algoritam.
 
-Onda se formatira dekriptirana ROOT particija i EFI particija:
+Formatiranje dekriptirane ROOT particije i EFI particije radi se na sljedeći način:
 
 ```
 mkfs.ext4 /dev/mapper/[ime mapirane dekriptirane particije]
@@ -580,32 +558,20 @@ mkfs.vfat -F 32 [datoteka uređaja koja predstavlja EFI particiju]
 mount --mkdir [datoteka uređaja koja predstavlja EFI particiju] /mnt/efi
 ```
 
-Opet, postupak instalacije je uobičajen sve do bootloadera:
+### Generiranje ključa za eliminiranje dvostruke prijave
+
+Nakon izvršenja ```arch-chroot``` naredbe na */mnt* točki i instalaciji svega potrebnog **osim** generiranja initramfs datotečnog sustava uz pomoć mkinitcpio alata te instalacije i konfiguracije GRUB bootloadera, potrebno je stvoriti LUKS ključ. To se radi naredbom:
 
 ```
-### Instalacija paketa i generiranje fstab datoteke
-pacman-key --refresh-key
-pacstrap -K /mnt/ base base-devel linux linux-firmware vim nano networkmanager grub efibootmgr os-prober dosfstools mtools
-genfstab -U /mnt/ | tee /mnt/etc/fstab
-arch-chroot /mnt/
-
-#### Postavljanje sustava
-ln -sf /usr/share/zoneinfo/Europe/Zagreb /etc/localtime
-hwclock --systohc
-sed -i 's/^#\s*\(en_US.UTF-8\sUTF-8\)/\1/' /etc/locale.gen
-sed -i 's/^#\s*\(hr_HR.UTF-8\sUTF-8\)/\1/' /etc/locale.gen
-locale-gen
-echo "LANG=en_US.UTF-8" | tee /etc/locale.conf
-echo "KEYMAP=croat" | tee /etc/vconsole.conf
-echo "FONT=Lat2-Terminus16" | tee -a /etc/vconsole.conf
-echo "krypton" | tee /etc/hostname
-systemctl enable NetworkManager
-passwd
+dd bs=512 count=4 if=/dev/random iflag=fullblock | install -m 0600 /dev/stdin /etc/cryptsetup-keys.d/cryptlvm.key
+cryptsetup -v luksAddKey [datoteka uređaja koja predstavlja enkriptiranu particiju ROOT] /etc/cryptsetup-keys.d/[ime ključa].key
 ```
 
-### Postavljanje initramfs datotečnog sustava
+Datoteka *.key* ovdje ima ulogu *Key filea*. *Key fileovi* su datoteke koje sadrže zaporke koje se koriste za dekriptiranje particija, isto kao i obične zaporke. Razlika je u tome što je *Key fileova* zaporka kompliciranija zaporka koja se sastoji od dugačkog niza bitova (vidi se iz primjera koristeći naredbu *dd*). Ovdje se sadržaj *Key filea* sažima (*eng. hash*) i enkriptira Master ključem (koji je otključan upisujući zaporku iz inicijalnog *Key Slota*) i sprema na prvi nezauzet *Key Slot*. Ovakvu zaporku je gotovo nemoguće pogoditi. Postupak dekriptiranja particije je gotovo s *Key fileom* je isti kao i postupak dekriptiranja particije standardnom zaporkom samo što se u slučaju *Key filea* zaporka čita iz datoteke, a u slučaju obične standardne zaporke zaporka se čita sa standardnog ulaza (tipkovnica).
 
-HOOK-ovi moraju biti isti kao i u prethodnom slučaju, dakle u *mkinitcpio.conf* se mora nalaziti ovakav redak:
+#### Konfiguracija i generiranje initramfs datotečnog sustava
+
+HOOK-ovi moraju biti isti kao i u slučaju s neenkriptiranom BOOT particijom, dakle u *mkinitcpio.conf* se mora nalaziti ovakav redak:
 
 ```
 ...
@@ -613,9 +579,35 @@ HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont bl
 ...
 ```
 
-Regeneracija *initramfs* se radi naredbom ```mkinitcpio -P```.
+Međutim, u *mkinitcpio.conf* potrebno je dodati prethodno generiranu datoteku ključa:
 
-### Konfiguracija GRUB bootloadera
+```
+FILES=(... /etc/cryptsetup-keys.d/[ime ključa].key)
+```
+
+Datoteka ključa se kopira iz ROOT datotečnog sustava s lokacije */etc/cryptsetup-keys.d/[ime ključa].key* na *initramfs* datotečni sustav na lokaciji */etc/cryptsetup-keys.d/[ime ključa].key*.
+
+Regeneracija *initramfs* se radi naredbom:
+
+```
+mkinitcpio -P
+```.
+
+Naredba će ugraditi ključ u *initramfs* datotečni sustav. Jezgra će ga koristiti za otključavanje ROOT particije prilikom montiranja. Ovo znači da će se jezgra automatski otključati ROOT particiju što eliminira drugu prijavu.
+
+#### Instalacija i konfiguracija GRUB bootloadera
+
+U datoteku */etc/default/grub* potrebno je dodati sljedeće linije:
+
+```
+...
+GRUB_CMDLINE_LINUX="... cryptdevice=UUID=[UUID enkriptirane particije]:[ime mapirane dekriptirane particije] root=/dev/mapper/[ime mapirane dekriptirane particije] cryptkey=rootfs:/etc/cryptsetup-keys.d/[ime ključa].key ..."
+...
+GRUB_ENABLE_CRYPTODISK=y
+...
+```
+
+Redak *GRUB_ENABLE_CRYPTODISK=y* će omogućiti GRUB-u pristup enkriptiranim diskovima (ROOT na kojem se nalazi Linux jezgra). Argument *cryptkey=rootfs:/...* govori Linux jezgri gdje se u *initramfs* datotečnom sustavu nalazi ključ za otključavanje kojom će otključati ROOT particiju. HOOK *encrypt* čita ključ i dekriptira ROOT particiju navedenu pod *cryptdevice*.
 
 Instalacija GRUB bootloadera radi se naredbom:
 
@@ -623,36 +615,64 @@ Instalacija GRUB bootloadera radi se naredbom:
 grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=grub_uefi --recheck
 ```
 
-**BITAN DIO.** U datoteku */etc/default/grub* potrebno je dodati dodatni Linux jezgrene parametre **i omogućiti GRUB-u pokretanje Linux jezgre s enkriptiranog diska**. Kako u ovom slučaju GRUB pristupa enkriptiranoj ROOT particiji, tražit će se lozinka s kojom će GRUB dekriptirati particiju i učitati Linux jezgru. Sam GRUB dosta sporo to izvodi. Također nakon učitavanje Linux jezgre u RAM i *initramfs* datotečnog sustava, ona će također htjeti pristupiti enkriptiranoj particiji kako bi montirala ROOT što znači da će se opet tražit upis lozinke. Ovo znači da dva puta zaredom upisujemo lozinku za pristup disku. Ovo se može riješiti dodavanjem ključa. 
-
-Dakle, prvo potrebno je generirati ključ:
-
-```
-dd bs=512 count=4 if=/dev/random iflag=fullblock | install -m 0600 /dev/stdin /etc/cryptsetup-keys.d/cryptroot.key
-cryptsetup -v luksAddKey [datoteka uređaja koja predstavlja enkriptiranu particiju ROOT] /etc/cryptsetup-keys.d/cryptroot.key
-```
-
-Onda je potrebno u datoteku */etc/default/grub* osigurati da se u njoj nalaze sljedeće linije:
-
-```
-...
-GRUB_CMDLINE_LINUX="... cryptdevice=UUID=[UUID enkriptirane particije]:[ime mapirane dekriptirane particije] root=/dev/mapper/[ime mapirane dekriptirane particije] cryptkey=rootfs:/etc/cryptsetup-keys.d/cryptroot.key ..."
-...
-GRUB_ENABLE_CRYPTODISK=y
-...
-```
-
-Primjena konfiguracije radi se naredbom:
+Izgradnja konfiguracije može se učiniti naredbom:
 
 ```
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
-Na kraju, potrebno je ponovno pokrenuti sustav:
+Nakon ponovnog pokretanja sustava pojavit će se upit za upis zaporke **prije pojave GRUB bootloader menija**. Nakon upisa zaporke, derivaciju ključa i dekripciju ROOT particije će raditi GRUB koji je znatno sporiji nego Linux jezgra. Nakon toga će GRUB prikazati svoj meni. Nakon odabira Linux jezgre i *initramfs* datotečnog sustava u meniju, jezgra će sama iščitati drugu zaporku koja je u obliku ključa u *initramfs* datotečnom sustavu i koristit će ga za dekriptiranje ROOT particije kako bi ju mogla montirati. Ovaj postupak je znatno dugotrajniji nego prvi postupak gdje jezgra ostaje neenkriptirana. Sustav je u ovom slučaju siguran od podmetanja maliciozne jezgre jer se sama Linux jezgra nalazi na ROOT particiji koju samo GRUB bootloader može otključati uz pomoć korisnika koji zna zaporku. Ukratko, postupak je ovakav:
 
 ```
-exit
-umount -R /mnt
-cryptsetup close [ime mapirane dekriptirane particije]
-reboot
+        +--------------------+              +-------------------+              +-------------------+
+        |   UČITAVANJE GRUB  |------------->|    UPIS LOZINKE   |------------->| DERIVACIJA KLJUČA |
+        |     BOOTLOADERA    |              |     IZ LOZINKE    |              |    IZ LOZINKE     |
+        +--------------------+              +-------------------+              +-------------------+
+                                                                                        ||
+                                                                                        \/
+                                            +-------------------+              +-------------------+
+                                            |   DEKRIPTIRANJE   |              |      ČITANJE      |
+                                            |     PROČITANOG    |<-------------|   ENKRIPTIRANOG   |
+                                            |   ENKRIPTIRANOG   |              |       KLJUČA      |
+                                            |       KLJUČA      |              |      IZ UTORA     |
+                                            +-------------------+              +-------------------+
+                                                      ||                                 /\      Ako sažetci nisu jednaki, idi na sljedeći utor
+                                                      ||                                 ||
+                                                      \/                                 ||
+                                            +------------------------+         +-------------------------+
+                                            | IZRAČUNAVANJE SAŽETKA  |         |  USPOREDBA IZRAČUNATOG  |
+                                            | DEKRIPTIRANOG GLAVNOG  |-------->|  SAŽETKA SA SPREMLJENIM |
+                                            |         KLJUČA         |         | SAŽETKOM U UTORU KLJUČA |
+                                            +------------------------+         +-------------------------+
+                                                                                         ||
+                                                                                         ||      Ako su sažetci jednaki, dekriptiraj ROOT particiju
+        +-------------------+               +------------------------+                   \/      i učitaj Linux jezgru i initramfs datotečni sustav
+        | DERIVACIJA KLJUČA |               |    LINUX JEZGRA ČITA   |         +-------------------------+
+        |    IZ LOZINKE     |<--------------|  KEY FILE IZ INITRAMFS |<--------|  LINUX JEZGRA PREUZIMA  |
+        +-------------------+               |   DATOTEČNOG SUSTAVA   |         |     KONTROLU SUSTAVA    |
+                  ||                        +------------------------+         +-------------------------+
+                  \/
+        +-------------------+              +-------------------+ 
+        |      ČITANJE      |              |   DEKRIPTIRANJE   |
+        |   ENKRIPTIRANOG   |------------->|     PROČITANOG    |
+        |       KLJUČA      |              |   ENKRIPTIRANOG   |
+        |      IZ UTORA     |              |       KLJUČA      |
+        +-------------------+              +-------------------+
+                  /\ Ako sažetci nisu                ||
+                  || jednaki idi na                  ||
+                  || sljedeći utor                   \/
+        +-------------------------+        +------------------------+
+        |  USPOREDBA IZRAČUNATOG  |        | IZRAČUNAVANJE SAŽETKA  |
+        |  SAŽETKA SA SPREMLJENIM |<-------| DEKRIPTIRANOG GLAVNOG  |
+        | SAŽETKOM U UTORU KLJUČA |        |         KLJUČA         |
+        +-------------------------+        +------------------------+
+                  || Ako su sažetci
+                  || jednaki, spremi
+                  \/ glavni ključ u RAM
+        +----------------------+           +----------------------------+
+        | GLAVNI KLJUČ SE SADA |           | PISANJE I ČITANJE PODATAKA |
+        | NALAZI U RAM-U TE SE |---------->| NA DISK SE ODVIJA UZ POMOĆ |
+        | MONTIRA DEKRIPTIRANA |           |    DM-CRYPT PODSUSTAVA I   |
+        |    ROOT PARTICIJA    |           |       GLAVNOG KLJUČA       |
+        +----------------------+           +----------------------------+
 ```
