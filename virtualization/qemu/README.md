@@ -402,6 +402,28 @@ sudo qemu-system-x86_64 \
 -drive if=pflash,format=raw,file=OVMF_VARS.4m.fd
 ```
 
+### UEFI (OVMF) ljuska
+
+U slučaju da OVMF firmware ne uspije pronaći disk s kojeg pokrenuti bootloader ili operacijski sustav, pokrenut će se OVMF ljuska. Neke korisne naredbe za OVMF ljusku su:
+
+- izlistavanje svih boot zapisa iz datoteke */usr/share/edk2/x64/OVMF_VARS.4m.fd*:
+
+```
+bcfg boot dump
+```
+
+- uklanjanje zapisa iz datoteke */usr/share/edk2/x64/OVMF_VARS.4m.fd* koristeći njihov identifikator:
+
+```
+bcfg boot rm [identifikator zapisa]
+```
+
+- isključivanje virtualnog stroja:
+
+```
+reset -s
+```
+
 ### Korisne skripte
 
 U direktoriju [uefi-script](uefi-scripts) se nalaze skripte za pokretanje virtualnog stroja s TAP mrežnom konfiguracijom u UEFI načinu rada.
