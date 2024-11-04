@@ -248,7 +248,7 @@ Trenutni direktorij odnosno kontekst mora sadržavati sljedeće datoteke:
 - Dockerfile
 	- definira način izgradnje datoteke
 
-Datoteka *hello.py* ima sljedeći sadržaj:
+Datoteka *hello.py* ima sljedeći sadržaj (urediti uz pomoć *nano* uređivačem teksta):
 
 ```
 from flask import Flask
@@ -259,7 +259,7 @@ def hello():
     return "Hello World!"
 ```
 
-Dok Dockerfile datoteka ima sljedeći sadržaj:
+Dok Dockerfile datoteka ima sljedeći sadržaj (urediti uz pomoć *nano* uređivačem teksta):
 
 ```
 FROM ubuntu:22.04
@@ -290,7 +290,7 @@ Pokretanje slike s pravim prosljeđivanjem porta 8000 s domaćina na port 8000 u
 docker run -d -p 127.0.0.1:8000:8000 --name my_flask_container_1 -t my_flask_image:v1
 ```
 
-Prethodna naredba stvorila je instancu slike odnosno kontejner. U web pregledniku se sada može upisati *http://localhost:8000*.
+Prethodna naredba stvorila je instancu slike odnosno kontejner. U web pregledniku se sada može upisati *http://localhost:8000*. **Svaki Docker kontejner uobičajeno ima vlastiti mrežni prostor** što znači da je potrebno napraviti prosljeđivanje portova i mrežnu translaciju kako bi došli do servisa koju nudi Docker kontejner (ako uopće nudi ikakav servis).
 
 Zaustavljanje kontejnera, brisanje konačne slike i svih njenih slojeva te brisanje direktorija *my-flask-app* moguće je napraviti naredbama:
 
@@ -298,6 +298,7 @@ Zaustavljanje kontejnera, brisanje konačne slike i svih njenih slojeva te brisa
 docker stop my_flask_container_1
 docker rm my_flask_container_1
 docker rmi my_flask_image:v1
+docker builder prune
 cd ~
 rm -rf my-flask-app
 ```
@@ -378,3 +379,277 @@ Odjava s Docker Huba radi se naredbom:
 ```
 docker logout
 ```
+
+## Docker Compose
+
+[Docker Compose](https://docs.docker.com/compose/) je alat koji omogućava definiranje i pokretanje više Docker kontejnera kao jedinstvenu aplikaciju. Pojednostavljuje upravljanje aplikacijom koja se sastoji od više servisa koji su predstavljeni Docker kontejnerima. Omogućuje jednostavno umrežavanje kontejnera i jednostavno montiranje spremničkog prostora računala domaćina u Docker kontejnere.
+
+### Docker Compose datoteka
+
+Docker Compose datoteka je datoteka pisana u YAML formatu koja definira način pokretanja aplikacije. Datoteka se u radnom direktoriju mora zvati *compose.yaml*, *compose.yml*, *docker-compose.yaml* ili *docker-compose.yml*. Preferirano ime je *compose.yaml*.
+
+Neke od bitnijih Docker Compose naredbi:
+
+- pokreće sve servise definirane u *compose.yaml* datoteci u pozadini:
+
+```
+docker compose up -d
+```
+
+- zaustavlja i uklanja sve servise u *compose.yaml* datoteci:
+
+```
+docker compose down
+```
+
+- pregled logova pokrenutih kontejnera:
+
+```
+docker compose logs
+```
+
+- lista svih servisa i njihov trenutni status:
+
+```
+docker compose ps
+```
+
+### Primjer Docker Compose datoteke - Wordpress i MariaDB
+
+Potrebno je stvoriti novi direktorij *wordpress-mariadb-compose* i premjestiti se u njega:
+
+```
+mkdir ~/wordpress-mariadb-compose
+cd ~/wordpress-mariadb-compose
+```
+
+Zatim je potrebno stvoriti datoteku *compose.yaml* i popuniti je sljedećim sadržajem (primjerice uređivačem teksta *nano*):
+
+```
+services:
+  db:
+    image: mariadb:10.6.19-focal
+    command: mysqld --default-authentication-plugin=mysql_native_password
+    container_name: mariadb-container
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=somewordpress
+      - MYSQL_DATABASE=wordpress
+      - MYSQL_USER=wordpress
+      - MYSQL_PASSWORD=wordpress
+    networks:
+      - app_network
+
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:6.6.2-php8.1-apache
+    container_name: wordpress-container
+    volumes:
+      - wp_data:/var/www/html
+    ports:
+      - 8080:80
+    restart: always
+    environment:
+      - WORDPRESS_DB_HOST=db:3306
+      - WORDPRESS_DB_USER=wordpress
+      - WORDPRESS_DB_PASSWORD=wordpress
+      - WORDPRESS_DB_NAME=wordpress
+    networks:
+      - app_network
+
+volumes:
+  db_data:
+    name: my_db_data
+  wp_data:
+    name: my_wp_data
+
+networks:
+  app_network:
+    driver: bridge
+    name: my_app_network
+```
+
+Servisi odnosno kontejneri mogu se pokrenuti naredbom:
+
+```
+docker compose up -d
+```
+
+Servisu *Wordpress* moguće je pristupiti na adresi *http://localhost:8080*. Ispis pokrenutih kontejnera može se napraviti naredbom:
+
+```
+docker compose ps
+```
+
+Ispis mrežnih komponenti moguće je napraviti naredbom:
+
+```
+docker network ls
+```
+
+Zaustavljanje i uklanjanje svih kontejnera moguće je naredbom:
+
+```
+docker compose down
+```
+
+Potrebno je uočiti da je za izvršavanje ```docker compose ...``` tipa naredbi potrebno nalaziti u direktoriju gdje se nalazi *compose.yaml* datoteka.
+
+Brisanje direktorija i preuzetih slika može se napraviti sljedećim nizom naredbi:
+
+```
+docker volume rm my_db_data my_wp_data
+docker rmi mariadb:10.6.19-focal
+docker rmi wordpress:6.6.2-php8.1-apache
+docker builder prune
+cd ~
+rm -rf ~/wordpress-mariadb-compose
+```
+
+#### Element 'services'
+
+Element [*services*](https://docs.docker.com/reference/compose-file/services/) je apstraktna definicija računalnog resursa u aplikaciji. Servisi se najčešće sastoje od definicija Docker kontejnera. U konkretnom primjeru pod elementom *services* navedena su dva servisa: *db* i *wordpress*.
+
+U konkretnom primjeru, servis *db* ima sljedeće definicije:
+
+- koja se slika pokreće (i njeno preuzimanje ako nije preuzeta) kao Docker kontejner:
+```
+image: mariadb:10.6.19-focal
+```
+
+- naredba koja će se izvršiti prilikom pokretanja kontejnera, nadjačava *CMD* instrukciju u Dockerfileu izvorne slike:
+```
+command: '--default-authentication-plugin=mysql_native_password'
+```
+
+- ime koje će se dati kontejneru:
+```
+container_name: mariadb-container
+```
+
+- trajna pohrana koja je mapirana s računala domaćina na Docker kontejner:
+```
+volumes:
+  - db_data:/var/lib/mysql
+```
+
+- politika ponovnog pokretanja:
+```
+restart: always
+```
+
+- varijable okruženja za Docker kontejner:
+```
+environment:
+  - MYSQL_ROOT_PASSWORD=somewordpress
+  - MYSQL_DATABASE=wordpress
+  - MYSQL_USER=wordpress
+  - MYSQL_PASSWORD=wordpress
+```
+
+- mrežni prostor kojoj pripada kontejner:
+```
+networks:
+  - applicationNetwork
+```
+
+Servis *wordpress* ima sljedeće definicije:
+
+- ovisnost servisa, servis se neće pokrenuti ako njegova ovisnost nije pokrenuta:
+```
+depends_on:
+  - db
+```
+
+- koja se slika pokreće (i njeno preuzimanje ako nije preuzeta) kao Docker kontejner:
+```
+image: wordpress:6.6.2-php8.1-apache
+```
+
+- ime koje će se dati kontejneru:
+```
+container_name: wordpress-container
+```
+
+- trajna pohrana koja je mapirana s računala domaćina na Docker kontejner:
+```
+volumes:
+  - wp_data:/var/www/html
+```
+
+- prosljeđivanje porta s računala domaćina u Docker kontejner
+```
+ports:
+  - 8080:80
+```
+
+- politika ponovnog pokretanja:
+
+```
+restart: always
+```
+
+- varijable okruženja za Docker kontejner:
+```
+environment:
+  - WORDPRESS_DB_HOST=db:3306
+  - WORDPRESS_DB_USER=wordpress
+  - WORDPRESS_DB_PASSWORD=wordpress
+  - WORDPRESS_DB_NAME=wordpress
+```
+
+- mrežni prostor kojoj pripada kontejner:
+```
+networks:
+  - app_network
+```
+
+#### Element 'volumes'
+
+Element [*volumes*](https://docs.docker.com/reference/compose-file/volumes/) je pohrana na računalu domaćinu koja se može koristiti u Docker kontejnerima. Više kontejnera može dijeliti istu pohranu. Postoje tri vrste takve pohrane:
+
+- *named volume*
+	- korišten u prethodnom primjeru s Wordpressom i MariaDB-om
+	- trajni zapis koji se nalazi na stvarnoj lokaciji u datotečnom sustavu računala domaćina u */var/lib/docker/volumes/* direktoriju
+	- njime upravlja Docker i uz pomoć Dockerovih alata moguće je upravljati ovakvim pohranama
+- *bind mount*
+	- trajni zapis koji se nalazi na stvarnoj lokaciji u datotečnom sustavu računala domaćina na proizvoljnoj lokaciji
+	- ovim pohranama upravlja korisnik i njeni opisi se ne dodaju pod *volumes* stavkom već samo u *services* stavku
+	- primjerice umjesto *db_data:/var/lib/mysql* moglo se napisati */my-application/mysql:/var/lib/mysql*, ovo znači da bi se podatci iz kontejnera s lokacije */var/lib/mysql* nalazili na */my-application/mysql* lokaciji
+- *tmpfs mount*
+	- privremeni zapis koji se nalazi samo u RAM-u
+
+U konkretnom primjeru, trajna pohrana *db_data* ima sljedeću definiciju:
+
+- naziv pohrane koji će biti vidljiv izvršavanjem naredbe ```docker volume ls```:
+```
+name: my_db_data
+```
+
+Trajna pohrana *wp_data* ima sljedeću definiciju:
+
+- naziv pohrane koji će biti vidljiv izvršavanjem naredbe ```docker volume ls```:
+```
+name: my_wp_data
+```
+
+#### Element 'networks'
+
+Element [*networks*](https://docs.docker.com/reference/compose-file/networks/) definira mrežu koju koriste Docker kontejneri. Omogućuje komunikaciju između kontejnera i stvaranje zasebne izolirane mreže. U primjeru su Wordpress i MariaDB u istoj mreži povezani virtualnim mrežnim mostom *app_network*. Oba kontejnera se mogu adresirati imenima servisa, dakle *wordpress* i *db* umjesto njihovih privatnih dodijeljenih IP adresa.
+
+U konkretnom primjeru, mreža *app_network* ima sljedeću definiciju:
+
+- naziv mreže koja će biti vidljiva izvršavanjem naredbe ```docker network ls```:
+```
+name: my_app_network
+```
+
+- način ostvarenja te mreže (mrežni most):
+```
+driver: bridge
+```
+
+U slučaju da nekim kontejnerima nisu eksplicitno dodijeljene mreže, oni pripadaju mreži *default* i mogu međusobno komunicirati.
