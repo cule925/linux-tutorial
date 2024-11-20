@@ -599,40 +599,105 @@ Sada je potrebno ponovno pokrenuti računalo ili virtualni stroj naredbom:
 reboot
 ```
 
-### Završne preporuke
+#### Uređivanje prompta
 
-Preporuke:
+Nije obavezno, ali u *.bashrc* u korisnikovom *home* direktoriju može se postaviti varijabla okruženja *PS1* na primjerice vrijednost ```PS1='\[\033[01;38;2;R;G;Bm\]\u@\h:\w \$\[\033[00m\] '```, gdje su *R*, *G* i *B* intenziteti boja raspona od 0 do 255.
 
-- postavljanje prečaca u postavkama
-	- naredba za terminal je *kgx*
-- dodavanje načina unosa u postavke
-- promjena teme
-- uređivanje */etc/pacman.conf* datoteke (naredba ```nano /etc/pacman.conf```)
-	- otkomentiranje zapisa:
-		```
-		...
-		Color
-		...
-		ParallelDownloads = 5
-		...
-		```
-	- dodavanje zapisa odmah ispod gore navedenih:
-		```
-		...
-		ILoveCandy
-		...
-		```
-- uređivanje *prompta* odnosno varijable okruženja *PS1* u *.bashrc* datoteci:
-	- potrebno je dati vlastitu vrijednost varijabli *PS1* u obliku ```PS1='\[\033[01;38;2;R;G;Bm\]\u@\h:\w \$\[\033[00m\] '```
-		- *R*, *G* i *B* predstavljaju intenzitete boja, rasponi su im od 0 uključivo do 255 uključivo
-	- primjerice za crvenu boju *prompta*:
-		```
-		...
-		PS1='\[\033[01;38;2;255;0;0m\]\u@\h:\w \$\[\033[00m\] '
-		...
-		```
+### Kontinuirano ažuriranje sustava
 
-#### Još korisnih paketa
+Arch Linux prati tzv. Rolling Release Model što znači da se sustav kontinuirano ažurira. Ovo znači da ne postoje konkretne verzije Arch Linuxa već se softverski paketi neprestano ažuriraju. Kako bi se sustav održao ažurnim potrebno je ažurirati sve pakete naredbom:
+
+```
+sudo pacman -Syu
+```
+
+### Upravitelj paketa
+
+Iz navedenih uputa, može se uočiti da se aplikacije odnosno paketi na Arch Linuxu upravljaju [*pacman*](https://wiki.archlinux.org/title/Pacman) upraviteljem paketa. Konfiguracije *pacman* upravitelja paketa nalaze se u datoteci *pacman.conf*. Pod sekcijom *[options]* nalaze se općenite opcije. Svaka druga sekcija definira zrcaljeni poslužitelj koji se koristi za dohvat paketa. Zadano, *[core]* i *[extra]* sekcije pokazuju na datoteku */etc/pacman.d/mirrorlist* koja sadrži adrese zrcaljenih poslužitelja paketa odnosno repozitorija paketa. Repozitoriji koji su izlistani prije će imati prednost u dohvatu paketa.
+
+Pod sekcijom *[options]* inicijalno je korisno imati otkomentirano stavku *ParallelDownloads=5* što omogućuje paralelno preuzimanje maksimalno 5 paketa. Također, radi estetskih razloga, dobro bi bilo otkomentirati *Color* i dodati stavku *ILoveCandy*.
+
+Datoteka *pacman.conf* može se urediti uređivačem teksta *nano*:
+
+```
+sudo nano /etc/pacman.conf
+```
+
+#### Naredbe za upravljanje paketima
+
+Paket je zapravo arhiva koja sadržava prevedene datoteke aplikacije, metapodatke aplikacije (ime aplikacije, ovisnosti, inačica aplikacije, ...) i direktive za *pacman*.
+
+Instalacija paketa radi se već navedenom naredbom:
+
+```
+sudo pacman -S [ime paketa]
+```
+
+Uklanjanje paketa uključujući i njegove ovisnosti koje ni jedan drugi paket ne koristi radi se naredbom:
+
+```
+sudo pacman -Rs [ime paketa]
+```
+
+Uklanjanje paketa uključujući i njegove ovisnosti koje ni jedan drugi paket ne koristi i konfiguracijske datoteke povezane s tim paketom radi se naredbom:
+
+```
+sudo pacman -Rs [ime paketa]
+```
+
+Sinkronizacija lokalnih baza podataka repozitorija s udaljenim repozitorijima i ažuriranje svih paketa u sustavu radi se već navedenom naredbom:
+
+```
+sudo pacman -Syu
+```
+
+Pretraga paketa u lokalnim bazama podataka radi se naredbom:
+
+```
+sudo pacman -Ss [ime paketa]
+```
+
+Pretraga instaliranih paketa radi se naredbom:
+
+```
+sudo pacman -Qs [ime paketa]
+```
+
+Ispis informacija o paketu u lokalnim bazama podataka radi se naredbom:
+
+```
+sudo pacman -Si [ime paketa]
+```
+
+Ispis informacija o instaliranom paketu radi se naredbom:
+
+```
+sudo pacman -Qi [ime paketa]
+```
+
+U direktoriju */var/lib/pacman/local/* nalaze se informacije o svim instaliranim paketima. Direktorij */var/lib/pacman/sync/* sadrži baze podataka informacija svih paketa na udaljenim repozitorijima označeni pod sekcijama. Primjerice, informacije o paketima u repozitorijima u sekciji *[core]* nalaze se u datoteci */var/lib/pacman/sync/core.db*, *[extra]* u datoteci */var/lib/pacman/sync/extra.db* i slično.
+
+Potrebno je navesti da *pacman* sprema starije pakete na lokaciju */var/cache/pacman/pkg/* i ne briše ih automatski već samo nisu dostupni kao aplikacija na sustavu. Ovo omogućuje vraćanje paketa na stariju verziju ako nešto ne valja s najnovijim paketom. Međutim, ovaj direktorij s vremenom može narasti te ga je potrebno povremeno počistiti naredbom:
+
+```
+sudo paccache -r
+```
+
+Naredba zadano ostavlja tri najnovija paketa iste aplikacije. Alat *paccache* se može instalirati naredbom ```sudo pacman -S pacman-contrib```. Naredba koja briše sve pakete u */var/cache/pacman/pkg/* koji se ne koriste na sustavu i briše sve nekorištene baze podataka u */var/lib/pacman/* je:
+
+```
+sudo pacman -Sc
+```
+
+Agresivniji način koji briše sve iz direktorija */var/cache/pacman/pkg/* je uz korištenje naredbe:
+
+```
+sudo pacman -Scc
+```
+
+**Ovu naredbu nije preporučeno uvijek koristiti osim kada stvarno više nema prostora na disku.**
+
+#### Korisni paketi
 
 Dodatni paketi koji bi možda bili korisni:
 	- *git* : alat za verzioniranje
@@ -658,15 +723,5 @@ Dodatni paketi koji bi možda bili korisni:
 Naredba za instalaciju svih navedenih paketa je:
 
 ```
-pacman -S git htop fastfetch firefox ffmpeg gst-libav gedit man-db wget curl cmake zip unzip bluez bluez-utils usbutils lsof net-tools inetutils nmap dhclient code discord
+sudo pacman -S git htop fastfetch firefox ffmpeg gst-libav gedit man-db wget curl cmake zip unzip bluez bluez-utils usbutils lsof net-tools inetutils nmap dhclient code discord
 ```
-
-### Završna napomena
-
-Arch Linux prati tzv. Rolling Release Model što znači da se sustav kontinuirano ažurira. Ovo znači da ne postoje konkretne verzije Arch Linuxa već se softverski paketi neprestano ažuriraju. Kako bi se sustav održao ažurnim potrebno je ažurirati sve pakete naredbom:
-
-```
-sudo pacman -Syu
-```
-
-Također, prije instalacije novih paketa također bi bilo poželjno prvo ažurirati sve pakete na sustavu.
