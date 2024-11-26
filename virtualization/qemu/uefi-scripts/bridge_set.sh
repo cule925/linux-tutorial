@@ -28,11 +28,8 @@ fi
 # Configure the network
 ip link add name $BR_IF type bridge
 ip link set $BR_IF address $BR_IF_MAC
-ip link set $BR_IF up
-
-ip link set $ETH_IF up
 ip link set $ETH_IF master $BR_IF
-
+ip link set $BR_IF up
 dhclient $BR_IF
 
 echo "Bridge $BR_IF created!"

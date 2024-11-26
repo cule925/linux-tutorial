@@ -27,7 +27,6 @@ fi
 
 ip tuntap add $TAP_IF mode tap user root
 ip link set $TAP_IF address $TAP_IF_MAC
-
 ip link set $TAP_IF master $BR_IF
 ip link set $TAP_IF up
 

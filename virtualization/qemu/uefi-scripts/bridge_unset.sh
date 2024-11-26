@@ -23,10 +23,8 @@ fi
 # Dismantle the network
 ip link set $ETH_IF down
 ip link set $ETH_IF nomaster
-
 ip link set $BR_IF down
 ip link delete $BR_IF type bridge
-
 ip link set $ETH_IF up
 
 echo "Bridge $BR_IF destroyed!"

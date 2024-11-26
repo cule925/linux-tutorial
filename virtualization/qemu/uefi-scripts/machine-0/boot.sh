@@ -15,11 +15,6 @@ if [[ -z $DISK ]]; then
 	exit 1
 fi
 
-# Create TAP interface
-cd tap-setup/
-./tap_set.sh
-cd ../
-
 # Set option
 echo "Booting with ISO [y/n]?"
 read BOOT_WITH_ISO
@@ -39,6 +34,11 @@ if [[ "$BOOT_WITH_ISO" == "y" || "$BOOT_WITH_ISO" == "Y" ]]; then
 	CDROM_ARG="-cdrom $ISO_PATH"
 
 fi
+
+# Create TAP interface
+cd tap-setup/
+./tap_set.sh
+cd ../
 
 # Get the TAP interface name
 TAP_IF=$(cat tap-setup/tap.txt)

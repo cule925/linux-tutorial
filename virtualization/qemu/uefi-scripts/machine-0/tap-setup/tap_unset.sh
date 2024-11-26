@@ -17,7 +17,6 @@ fi
 
 ip link set $TAP_IF down
 ip link set $TAP_IF nomaster
-
 ip tuntap del $TAP_IF mode tap
 
 echo "TAP interface $TAP_IF destroyed!"

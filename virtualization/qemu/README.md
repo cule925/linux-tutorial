@@ -95,52 +95,64 @@ qemu-system-x86_64 \
 
 Ovakav način rada je BIOS način rada. Na tvrdom disku je potrebno koristiti MBR shemu particioniranja.
 
+S računala domaćina i ostalih računala u mreži, virtualnom stroju je moguće pristupiti uz pomoć SSH protokola na portu 8022:
+
+```
+        *---------------------------*
+        | ARCH LINUX HOST           |
+        |                           |
+        |    *-----------------*    |
+        |    | QEMU VM RUNNING |    |
+        |    | ARCH LINUX      |    |
+        |    |                 |    |
+        |    |  [22]           |    |
+        |    *---||------------*    |
+        |      [8022]               |
+        *---------------------------*
+```
+
 ### TAP sučelje
 
-Kako je SLIRP način rada relativno spor zbog velikog *overheada*, moguće je virtualni stroj s drugim mrežnim postavkama, primjerice [TAP sučeljima](https://en.wikipedia.org/wiki/TUN/TAP) koje imaju znatno bolje performanse, ali zahtijevaju konfiguraciju na računalu domaćinu. TAP je jezgrin virtualni mrežni uređaj koji simulira mrežni uređaj koji implementira drugi sloj OSI modela odnosno sloj podatkovne poveznice. Ovo znači da TAP uređaj ima svoju MAC adresu. Kako bi spojili TAP uređaj na virtualni stroj, potrebno ga je stvoriti na računalu domaćinu naredbom:
-
-```
-sudo ip tuntap add tap0 mode tap user root
-```
-
-Ovo će stvoriti mrežni uređaj TAP imena *tap0*. Moguće mu je dodijeliti MAC adresu naredbom:
-
-```
-sudo ip link set tap0 address 02:FF:FF:FF:FF:01
-```
-
-Sljedeće što je potrebno je stvoriti virtualni mrežni most. Virtualni mrežni most se ponaša kao mrežni preklopnik, prosljeđujući pakete po MAC adresama. Virtualni mrežni most se može stvoriti naredbom:
+Kako je SLIRP način rada relativno spor zbog velikog *overheada*, moguće je virtualni stroj s drugim mrežnim postavkama, primjerice [TAP sučeljima](https://en.wikipedia.org/wiki/TUN/TAP) koje imaju znatno bolje performanse, ali zahtijevaju konfiguraciju na računalu domaćinu. TAP je jezgrin virtualni mrežni uređaj koji simulira mrežni uređaj koji implementira drugi sloj OSI modela odnosno sloj podatkovne poveznice. Ovo znači da TAP uređaj ima svoju MAC adresu. Prije stvaranja TAP sučelja, potrebno je stvoriti virtualni mrežni most. Virtualni mrežni most se ponaša kao mrežni preklopnik, prosljeđujući pakete po MAC adresama. Može se stvoriti na računalu domaćinu naredbom:
 
 ```
 sudo ip link add name br0 type bridge
 ```
 
-Mostu se također može dodijeliti MAC adresa:
+Prethodna naredba će stvoriti most imena *br0*. TAP uređaj imena *tap0* se može stvoriti naredbom:
+
+```
+sudo ip tuntap add tap0 mode tap user root
+```
+
+Dodjela MAC adresa mostu i TAP uređaju može se napraviti naredbama:
 
 ```
 sudo ip link set br0 address 02:FF:FF:FF:FF:00
+sudo ip link set tap0 address 02:FF:FF:FF:FF:01
 ```
 
-Prije povezivanja svih potrebnih sučelja, potrebno ih je aktivirati:
-
-```
-sudo ip link set br0 up
-sudo ip link set tap0 up
-sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] up
-```
-
-Zatim je potrebno povezati fizičko Ethernet sučelje i TAP sučelje na most:
+Povezivanje fizičkog Ethernet sučelja i TAP sučelja na most može se napraviti naredbama:
 
 ```
 sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] master br0
 sudo ip link set tap0 master br0
 ```
 
-Konačno, računalo krajnja točka komunikacije računala domaćina se nalazi na *br0* umjesto na Ethernet priključku stoga je potrebno zatražiti novu IP adresu od usmjernika naredbom:
+Ime Ethernet sučelja koje je spojeno na Internet može se saznati naredbom ```ip a```. Konačno, aktivacija TAP sučelja i mrežnog mosta radi se naredbom:
+
+```
+sudo ip link set tap0 up
+sudo ip link set br0 up
+```
+
+Krajnja točka komunikacije računala domaćina se nalazi na *br0* umjesto na Ethernet priključku stoga je potrebno zatražiti novu IP adresu od usmjernika naredbom:
 
 ```
 sudo dhclient br0
 ```
+
+Alternativno se može postaviti i statična adresa i *gateway* naredbama ```sudo ip address add [IP adresa ciljanog virtualnog stroja]/[subnet maska]``` i ```sudo ip route append default via [IP adresa gatewaya]```.
 
 Naredba za pokretanje virtualnog stroja je:
 
@@ -166,14 +178,47 @@ Većina argumenata su isti osim:
 	- oznaka *script=no* specificira skriptu koja će se izvršiti prilikom pokretanja virtualnog stroja (u ovom slučaju se ne pokreće skripta), specificira upute što treba napraviti s TAP uređajem, primjerice pridruživanje mostu
 	- oznaka *downscript=no* specificira skriptu koja će se izvršiti prilikom obustavljanja virtualnog stroja (u ovom slučaju se ne pokreće skripta), specificira upute što treba napraviti s TAP uređajem, primjerice razdruživanje od mosta
 
-Kada virtualni stroj završi s radom potrebno je razmontirati sve. Za početak je potrebno deaktivirati Ethernet i TAP sučelja:
+Virtualni stroj je povezan s LAN-om uz pomoć virtualnog mrežnog mosta preko računala domaćina:
 
 ```
-sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] down
+        *-------------------*
+        |  ARCH LINUX HOST  |
+        |                   |
+        |    *---------*    |
+        |    | QEMU VM |    |
+        |    | RUNNING |    |
+        |    | DEBIAN  |    |
+        |    *--[ETH]--*    |
+        |       [TAP]       |
+        |         |         |
+        |     [BRIDGE]      |
+        |         |         |
+        *-------[ETH]-------*
+```
+
+Mrežna topologija LAN-a, ako je računalo domaćin koje pokreće Arch Linux spojen na kućni usmjernik, izgledala ovako:
+
+```
+        *-------------*    LAN                                                           OTHER DEVICES
+        | HOME ROUTER |---------------+----------------------+-----------------------... CONNECTED TO
+        *-------------*               |                      |                           THE NETWORK
+           Gateway IP                 |                      |
+            address            *------|-----*         *------|-----*
+                               | PC running |         | VM running |
+                               | Arch Linux |         |   Debian   |
+                               *------------*         *------------*
+                                IP address A           IP address B
+```
+
+Kada virtualni stroj završi s radom potrebno je razmontirati sve. Za početak je potrebno deaktivirati mrežni most, TAP sučelje i Ethernet sučelje:
+
+```
+sudo ip link set br0 down
 sudo ip link set tap0 down
+sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] down
 ```
 
-Nakon toga je potrebno ukloniti sva sučelja s mosta:
+Nakon toga je potrebno odspojiti sva sučelja s mosta:
 
 ```
 sudo ip link set tap0 nomaster
@@ -186,11 +231,6 @@ Onda je potrebno obrisati TAP sučelje:
 sudo ip tuntap del tap0 mode tap
 ```
 
-Sljedeće što je potrebno je deaktivirati most:
-
-```
-sudo ip link set br0 down
-```
 
 Zatim je potrebno obrisati most:
 
@@ -198,7 +238,7 @@ Zatim je potrebno obrisati most:
 sudo ip link delete br0 type bridge
 ```
 
-Naposljetku je potrebno aktivirati Ethernet sučelje i zatražiti od usmjernika novu IP adresu:
+Naposljetku je potrebno aktivirati Ethernet sučelje:
 
 ```
 sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] up
@@ -215,11 +255,8 @@ Skripta *bridge_set.sh* imat će sljedeći sadržaj:
 
 sudo ip link add name br0 type bridge
 sudo ip link set br0 address 02:FF:FF:FF:FF:00
-sudo ip link set br0 up
-
-sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] up
 sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] master br0
-
+sudo ip link set br0 up
 sudo dhclient br0
 ```
 
@@ -230,7 +267,6 @@ Skripta *boot.sh* imat će sljedeći sadržaj:
 
 sudo ip tuntap add tap0 mode tap user root
 sudo ip link set tap0 address 02:FF:FF:FF:FF:01
-
 sudo ip link set tap0 master br0
 sudo ip link set tap0 up
 
@@ -245,7 +281,6 @@ sudo qemu-system-x86_64 \
 
 sudo ip link set tap0 down
 sudo ip link set tap0 nomaster
-
 sudo ip tuntap del tap0 mode tap
 ```
 
@@ -256,7 +291,6 @@ Skripta *boot_with_iso.sh* imat će sljedeći sadržaj:
 
 sudo ip tuntap add tap0 mode tap user root
 sudo ip link set tap0 address 02:FF:FF:FF:FF:01
-
 sudo ip link set tap0 master br0
 sudo ip link set tap0 up
 
@@ -272,7 +306,6 @@ sudo qemu-system-x86_64 \
 
 sudo ip link set tap0 down
 sudo ip link set tap0 nomaster
-
 sudo ip tuntap del tap0 mode tap
 ```
 
@@ -283,10 +316,8 @@ Skripta *bridge_unset.sh* imat će sljedeći sadržaj:
 
 sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] down
 sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] nomaster
-
 sudo ip link set br0 down
-sudo ip link delete br0 type bridge
-
+sudo ip link del br0 type bridge
 sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] up
 ```
 
@@ -384,7 +415,7 @@ Dvije datoteke koje su bitne u ovom kontekstu su */usr/share/edk2/x64/OVMF_CODE.
 cp /usr/share/edk2/x64/OVMF_VARS.4m.fd [direktorij gdje se nalazi virtualni tvrdi disk]
 ```
 
-Primjer pokretanja QEMU-a s UEFI firmware-om:
+Primjer pokretanja QEMU-a s UEFI firmwareom:
 
 ```
 sudo qemu-system-x86_64 \
