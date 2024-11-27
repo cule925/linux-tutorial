@@ -155,11 +155,11 @@ qemu-system-x86_64 \
 -drive format=qcow2,file=[ime virtualnog diska ciljanog virtualnog stroja]
 ```
 
-Potrebno je prijaviti se kao *root* korisnik (zaporka *passroot*) i urediti datoteku */etc/network/interfaces* tako što je potrebno sučelje *ens3* postaviti u *static* umjesto *dhcp* te mu postaviti konfiguraciju na sljedeći način (uz pomoć uređivača teksta *nano*):
+Potrebno je prijaviti se kao *root* korisnik (zaporka *passroot*) i urediti datoteku */etc/network/interfaces* tako što je potrebno sučelje koje je spojeno na mrežu (može se vidjeti s ```ip a```) postaviti u *static* umjesto *dhcp* te mu postaviti konfiguraciju na sljedeći način (uz pomoć uređivača teksta *nano*):
 
 ```
 ...
-iface ens3 inet static
+iface [ime sučelja] inet static
 	address [IP adresa ciljanog virtualnog stroja]/[subnet maska]
 	gateway [IP adresa gatewaya]
 ```
