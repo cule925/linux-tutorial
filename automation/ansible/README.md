@@ -1,6 +1,6 @@
 # ANSIBLE
 
-[Ansible](https://www.ansible.com/how-ansible-works/) je alat za upravljanje konfiguracijama IT infrastrukture pisan u Pythonu. Zasniva se na konceptu upravljačkog čvora i upravljanim čvorovima. Upravljački čvor (primjerice osobno računalo ili laptop) komunicira s upravljanim čvorovima (primjerice grupa poslužitelja) uz pomoć SSH protokola (OpenSSH implementacija). Upravljački čvor mora biti čvor koji pokreće Linux bazirane operacijske sustave dok upravljani čvorovi mogu pokretat ili Linux ili Windows bazirane operacijske sustave.
+[Ansible](https://www.ansible.com/how-ansible-works/) je alat za upravljanje konfiguracijama IT infrastrukture pisan u Pythonu. Zasniva se na konceptu upravljačkog čvora i upravljanim čvorovima. Upravljački čvor (primjerice osobno računalo ili laptop) komunicira s upravljanim čvorovima (primjerice grupa poslužitelja) uz pomoć SSH protokola (OpenSSH implementacija). Upravljački čvor mora biti čvor koji pokreće neku Linux distribuciju dok upravljani čvorovi mogu pokretat ili Linux ili Windows temeljene operacijske sustave.
 
 U sljedećim primjerima, računalo koje pokreće Arch Linux će imati ulogu upravljačkog čvora dok će virtualni strojevi koji pokreću Debian imati ulogu upravljanih čvorova. Virtualni strojevi će se pokretati na istom računalu.
 
@@ -110,6 +110,12 @@ Nakon instalacije alata, korisnika *user* je potrebno dodati u grupu *sudo* nare
 usermod -aG sudo user
 ```
 
+Također, kako bi Debian virtualni strojevi mogli funkcionirati kao Ansible upravljani čvorovi, potrebno je instalirati Python 3:
+
+```
+sudo apt install python3
+```
+
 Na kraju je potrebno ugasiti virtualni stroj:
 
 ```
@@ -179,7 +185,7 @@ poweroff
 
 ### Konfiguracija mrežnih postavki pri svakom pokretanju
 
-Sada je potrebno postaviti mrežne postavke n Arch Linuxu. Prvo što treba napraviti je stvoriti virtualni mrežni most i TAP sučelja:
+Sljedeće postavke se postavljaju kad se računalo domaćin koje pokreće Arch Linux ponovno pokrene ili se već postavljena mreža razmontirala. Prvo što treba napraviti je stvoriti virtualni mrežni most i TAP sučelja:
 
 ```
 sudo ip link add name br0 type bridge
@@ -227,12 +233,12 @@ sudo qemu-system-x86_64 \
 -m 2G \
 -cpu host \
 -smp 2 \
--netdev tap,id=net0,ifname=tap0,script=no,downscript=no \
+-netdev tap,id=net0,ifname=[ime TAP sučelja],script=no,downscript=no \
 -device virtio-net-pci,netdev=net0 \
 -drive format=qcow2,file=[ime virtualnog diska ciljanog virtualnog stroja]
 ```
 
-Mogu se otvoriti tri zasebna terminala za pokretanje tri virtualna stroja odjednom, bitno je da se naredba pokrene iz direktorija *~/ansible-vms*.
+Svakom virtualnom stroju potrebno je dodijeliti jedno TAP sučelje i jedan disk (disk-0.qcow2 za tap0, disk-1.qcow2 za tap1, disk-2.qcow2 za tap2,). Mogu se otvoriti tri zasebna terminala za pokretanje tri virtualna stroja odjednom, bitno je da se naredba pokrene iz direktorija *~/ansible-vms*.
 
 Jesu li virtualni strojevi vidljivi na LAN mreži može se provjeriti naredbom *nmap* na Arch Linuxu (iz paketa *nmap*):
 
@@ -242,7 +248,7 @@ nmap -sn [IP adresa mreže/subnet maska]
 
 ### Brisanje mrežnih postavki nakon gašenja
 
-Obrnuti postupak konfiguracije mrežnih postavki na Arch Linuxu je sljedeći. Prvo je potrebno deaktivirati virtualni mrežni most, sva TAP sučelja i fizičko Ethernet sučelje:
+Brisanje mrežne konfiguracije koja je bila postavljena na Arch Linuxu se radi sljedećim postupkom. Prvo je potrebno deaktivirati virtualni mrežni most, sva TAP sučelja i fizičko Ethernet sučelje:
 
 ```
 sudo ip link set br0 down
@@ -280,3 +286,238 @@ Za kraj, ponovna aktivacija Ethernet sučelja radi se naredbom:
 ```
 sudo ip link set [fizičko Ethernet sučelje spojeno na Internet] up
 ```
+
+## Primjer korištenja
+
+Kao što je već navedeno, računalo domaćin koje pokreće Arch Linux će imati ulogu upravljačkog čvora dok će virtualni strojevi koji pokreću Debian imati ulogu upravljanih čvorova. Dakle, na računalu domaćinu koji koristi [Arch Linux](https://wiki.archlinux.org/title/Ansible) potrebno je instalirati *Ansible* naredbom:
+
+```
+sudo pacman -S ansible
+```
+
+Ako se izričito žele [namjestiti postavke Ansiblea](https://docs.ansible.com/ansible/latest/reference_appendices/config.html), to je moguće na sljedeći način:
+
+- datoteka na koju pokazuje varijabla okruženja *ANSIBLE_CONFIG* ako postoji
+- datoteka *ansible.cfg* u trenutačnom direktoriju
+- datoteka *~/.ansible.cfg* u korisničkom *home* direktoriju
+- datoteka */etc/ansible/ansible.cfg*
+
+Datoteke će se pretraživati gornjim navedenim redoslijedom. Ako datoteka postoji prestaju se pretraživati sljedeće u redu. Stvaranje konfiguracijske datoteke u trenutačnom direktoriju sa svim zakomentiranim parametrima može se napraviti naredbom ```ansible-config init --disabled > ansible.cfg```. Značenja parametara mogu se naći [ovdje](https://docs.ansible.com/ansible/latest/reference_appendices/config.html#common-options).
+
+### SSH ključevi
+
+Ansible koristi SSH protokol kako bi pristupio upravljanim čvorovima. Potrebno je generirati par SSH ključeva i spremiti ih u direktorij *~/ansible-vms*:
+
+```
+ssh-keygen -t ed25519 -f ~/ansible-vms/ansible.key
+```
+
+Privatni ključ će se zvati *ansible.key* dok će se javni ključ zvati *ansible.key.pub*. Sada je potrebno kopirati javni ključ na pokrenute virtualne strojeve na lokaciji */home/user/.ssh/authorized_keys*:
+
+```
+ssh-copy-id -i ~/ansible-vms/ansible.key.pub user@192.168.1.201
+ssh-copy-id -i ~/ansible-vms/ansible.key.pub user@192.168.1.202
+ssh-copy-id -i ~/ansible-vms/ansible.key.pub user@192.168.1.203
+```
+
+### Inventar
+
+Nakon instanciranja triju navedenih virtualnih strojeva, na računalu domaćinu je prvo potrebno specificirati u datoteku kojim čvorovima će Ansible upravljati. Ova datoteka se naziva [Ansible inventar (*eng. Ansible inventory*)](https://docs.ansible.com/ansible/latest/getting_started/get_started_inventory.html).
+
+Inventar datoteke se mogu pisati u formatu INI ili YAML. U sljedećem primjeru koristit će se INI format. INI datoteke mogu imati sljedeći oblik:
+
+```
+[<ime grupe>]
+<IP adresa ili ime prvog čvora> <parametar>=<vrijednost> <parametar>=<vrijednost> ...
+<IP adresa ili ime drugog čvora> <parametar>=<vrijednost> <parametar>=<vrijednost> ...
+...
+
+[<ime grupe>:vars]
+<paramerar grupe>=<vrijednost parametra grupe>
+<paramerar grupe>=<vrijednost parametra grupe>
+...
+
+[<ime grupe>:children]
+<ime grupe 2>
+<ime grupe 3>
+...
+
+[<ime grupe 2>]
+...
+
+[<ime grupe 2>]
+...
+```
+
+Prva sekcija ```[<ime grupe>]``` definira niz upravljanih čvorova i parametre koji će se koristiti za pristup njima. Sekcija ```[<ime grupe>:vars]``` definira zajedničke odnosno grupne parametre koji će se koristiti za pristup navedenim čvorovima i čvorovima djeci. Sekcija ```[<ime grupe>:children]``` definira druge nizove čvorova koji pripadaju ovom nizu odnosno definira čvorove djecu. Ovo daje fleksibilnost kod pokretanja zadataka nad grupama. Pokretanje zadataka nad roditeljskom grupom pokrenut će i zadatke nad svim grupama djece. Međutim, pokretanje zadataka nad grupom djeteta neće pokrenuti zadatke nad grupom roditelja. Više o Ansible inventaru može se saznati [ovdje](https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html).
+
+Za primjer s tri virtualna stroja potrebno je u direktoriju *~/ansible-vms* stvoriti datoteku *inventory.ini* (naredba ```touch ~/ansible-vms/inventory.ini```) i popunit je sljedećim sadržajem (koristeći uređivač teksta *nano*):
+
+```
+[qemu_vms]
+192.168.1.201
+192.168.1.202
+192.168.1.203
+
+[qemu_vms:vars]
+ansible_ssh_private_key_file=ansible.key
+ansible_user=user
+ansible_python_interpreter=/usr/bin/python3
+```
+
+Prethodni inventar definira niz čvorova u grupi *qemu_vms* u kojem je potrebno izvršiti zadatke. Također, definira se [grupna varijabla](https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html#connecting-to-hosts-behavioral-inventory-parameters) koja specificira SSH privatni ključ i korisničko ime koje treba koristiti pri spajanju na svaki navedeni čvor. Također definira i Python interpreter koji treba koristiti na udaljenim čvorovima.
+
+Provjera jesu li svi navedeni čvorovi živi može se napraviti naredbom u direktoriju *~/ansible-vms/*:
+
+```
+ansible -i inventory.ini qemu_vms -m ping
+```
+
+Izlaz bi trebao biti sličan ovome:
+
+```
+192.168.1.201 | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+192.168.1.202 | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+192.168.1.203 | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+### Moduli
+
+[Ansible moduli (*eng. Ansible Modules*)](https://docs.ansible.com/ansible/2.8/user_guide/modules_intro.html) su gotove Python skripte sa specifičnim funkcijama koje Ansible izvršava. Primjer modula je navedeni modul [*ping*](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/ping_module.html). Popis svih modula nalazi se [ovdje](https://docs.ansible.com/ansible/2.8/modules/list_of_all_modules.html). Modulima se mogu prosljeđivati razni argumenti u obliku *ključ=vrijednost*.
+
+Neki moduli mogu tražiti izvršavanje s privilegiranim ovlastima na upravljanim čvorovima. Primjerice, izvršavanje naredbe ```ansible -i inventory.ini qemu_vms -m apt -a "update_cache=true"``` vratit će grešku jer naredba modula *apt* zahtijeva više ovlasti na upravljanim čvorovima (slično ```sudo apt update```). Rješenje ovog problema je dodavanjem zastavice *--become* i *--ask-become*:
+
+```
+ansible -i inventory.ini qemu_vms -m apt -a "update_cache=true" --become --ask-become
+```
+
+### Playbook
+
+[Ansible Playbook](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html) je datoteka koja definira skup zadataka koji će se izvršavati na upravljanim čvorovima. Playbook se piše u YAML formatu i izvršava se redoslijedom odozgora prema dolje. Najbolje je pokazati primjer s datotekom *install_apache.yml* u direktoriju *~/ansible-vms* (naredba ```touch ~/ansible-vms/inventory.ini```) koja ažurira lokalnu bazu podataka dostupnih paketa, instalira Apache web poslužitelj i pokreće ga. Dakle datoteka *install_apache.yml* bi trebala izgledati ovako (koristeći uređivač teksta *nano*):
+
+```
+- name: Installing Apache Web Server on Debian servers
+  hosts: qemu_vms
+  become: yes
+  tasks:
+    - name: Update local package database
+      apt:
+        update_cache: yes
+    - name: Install Apache
+      apt:
+        name: apache2
+        state: present
+    - name: Start Apache
+      service:
+        name: apache2
+        state: started
+        enabled: true
+```
+
+Pokretanje Playbooka radi se naredbom:
+
+```
+ansible-playbook install_apache.yml -i inventory.ini --ask-become-pass
+```
+
+Prethodni Playbook koristi module [*apt*](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html) i [*service*](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/service_module.html) za instalaciju i pokretanje Apache web poslužitelja. Poslužitelji su dostupni na adresama *http://192.168.1.201*, *http://192.168.1.202* i *http://192.168.1.203*.
+
+Isječak odnosno početno zaglavlje iz datoteke *install_apache.yml*:
+
+```
+- name: Installing Apache Web Server on Debian servers
+  hosts: qemu_vms
+  become: yes
+  tasks:
+```
+
+Objašnjenja pojmova:
+
+- *name: Installing Apache Web Server on Debian servers*
+	- opis što radi Playbook
+	- ispisuje se pri izvršenju Playbooka
+- *hosts: qemu_vms*
+	- nad kojom grupom upravljanih čvorova će se izvršiti zadatci (grupa *qemu_vms* u datoteci *inventory.ini*)
+- *become: yes*
+	- izvrši zadatke kao privilegirani korisnik (zadatci se izvršavaju uz *sudo*)
+- *tasks:*
+	- niz zadataka kojih je potrebno izvršiti
+
+Isječak zadatka koji iz datoteke *install_apache.yml* ažurira lokalnu bazu podataka dostupnih paketa:
+
+```
+    - name: Update local package database
+      apt:
+        update_cache: yes
+```
+
+Objašnjenja pojmova:
+
+- *name: Update local package database*
+	- opis što radi zadatak
+	- ispisuje se pri izvršenju zadatka
+- *apt:*
+	- modul koji se koristi za [upravljanje APT paketima](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html)
+- *update_cache: yes*
+	- argument modula, označava osvježavanje lokalne baze podataka dostupnih paketa
+
+Zadatak je sličan naredbi ```sudo apt update```.
+
+Isječak zadatka iz datoteke *install_apache.yml* koji instalira Apache web poslužitelj:
+
+```
+    - name: Install Apache
+      apt:
+        name: apache2
+        state: present
+```
+
+Objašnjenja pojmova:
+
+- *name: Install Apache*
+	- opis što radi zadatak
+	- ispisuje se pri izvršenju zadatka
+- *apt:*
+	- modul koji se koristi za [upravljanje APT paketima](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html)
+- *name: apache2*
+	- ime paketa za instalaciju, u ovom slučaju *apache2*
+- *state: present*
+	- paket mora biti instaliran, ako već jest nije potrebna ponovna instalacija
+
+Zadatak je sličan naredbi ```sudo apt install -y apache2```.
+
+Isječak zadatka iz datoteke *install_apache.yml* koji pokreće Apache web poslužitelj:
+
+```
+    - name: Start Apache
+      service:
+        name: apache2
+        state: started
+        enabled: true
+```
+
+Objašnjenja pojmova:
+
+- *name: Start Apache*
+	- opis što radi zadatak
+	- ispisuje se pri izvršenju zadatka
+- *service:*
+	- modul koji se koristi za [upravljanje servisima](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/service_module.html)
+	- podržava systemd, BSD, OpenRC, SysV i druge *init* sustave
+- *name: apache2*
+	- ime servisa koji se treba pokrenuti
+- *state: started*
+	- servis mora biti pokrenut, ako nije potrebno ga je pokrenuti
+- *enabled: true*
+	- servis mora biti omogućen tako da se pokrene pri svakom ponovnom pokretanju virtualnog stroja
+
+Zadatak je sličan naredbama ```sudo systemctl start apache2``` i ```sudo systemctl enable apache2```.
