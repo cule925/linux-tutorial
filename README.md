@@ -12,5 +12,6 @@ Preporučuje se slijediti sljedeće poveznice:
 * virtualizacija: [ovdje](virtualization)
 * automatizacija: [ovdje](automation)
 * redundancija: [ovdje](redundancy)
+* sigurnosne kopije: [ovdje](backup)
 
 Većina primjera je isprobana na Arch Linux distribuciji koja se pokretala na osobnom računalu 64 bitne x86 arhitekture (poznata kao i x86_64 ili AMD64).
