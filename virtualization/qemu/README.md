@@ -36,6 +36,92 @@ Prethodna naredba će stvoriti datoteku koja predstavlja virtualni disk formata 
 
 Postoje i opcije za promjenu veličine diska (```qemu-img resize ...```) te promjene formata (```qemu-img convert```).
 
+### Loop pseudouređaj
+
+Datoteka virtualnog diska je datoteka koja se ponaša kao imitacija fizičkog diska. Ovo znači da se u njoj, primjerice nakon instalacije nekog operacijskog sustava uz pomoć QEMU-a, nalazi cijeli zasebni datotečni sustav (ext4, NTFS) s vlastititim particijama. Dakle, sama datoteka je disk za sebe i njezin sadržaj od prvog do zadnjeg bajta sadrži particijsku tablicu, particije, datotečne sustave na tim particijama itd.
+
+[Linux loop pseudouređaj](https://en.wikipedia.org/wiki/Loop_device) je značajka Linux jezgre koja omogućuje pristup datoteci virtualnog diska kao blok uređaju umjesto preko datotečnog sustava u kojem se ta datoteka nalazi. Ovo znači da je particije iz te datoteke moguće montirati na direktorije na sustavu.
+
+**Za povezivanje datoteke na loop pseudouređaj i pristup njegovim particijama, datoteka virtualnog diska mora biti u RAW formatu, ne u QCOW2 formatu.** Format RAW je jednostavni format koji ne sadrži nikakve kompresije particijskih tablica, particija ili bilo kojih drugih informacija.
+
+Kao primjer, može se stvoriti prazna datoteka *disk.img* formata RAW veličine 512 MiB naredbom:
+
+```
+qemu-img create -f raw disk.img 512M
+```
+
+Drugi način na koji se ovo moglo izvesti je naredbom ```dd if=/dev/zero of=disk.img bs=1M count=256```. Stvorena datoteka *disk.img* bit će popunjena nulama u oba slučaja. Kako bi stvorili particijsku tablicu i particije u njoj, može se koristiti alat ```parted``` (ili ```fdisk```). Naredba gdje će se stvoriti GPT particijska tablica s dvije particije, jedna vrste EFI veličine 128 MiB, druga vrste Linux veličine ostalog slobodnog prostora je:
+
+```
+parted -s disk.img \
+mklabel gpt \
+mkpart ESP fat32 1MiB 129MiB \
+set 1 esp on \
+mkpart rootfs ext4 129MiB 100%
+```
+
+Dijelovi potpune naredbe:
+
+- opcija ```-s``` označava izvršava naredbu u neinteraktivnom načinu rada
+- naredba ```mklabel gpt``` stvara GPT particijsku tablicu (jednako naredbi ```g``` kod fdisk alata)
+- naredba ```mkpart ESP 1MiB 129MiB``` stvara particiju s imenom "ESP", s pomakom od 1 MiB od početka diska (sektor 2048 = 1 MiB / 512 B) sve do 129 MiB od početka diska, postavlja vrstu particije (*partition type UUID*) kao "Microsoft Basic Data"
+- naredba ```set 1 esp on``` postavlja ESP zastavicu na prvoj particiji (particija broj 1), vrsta prve particije (*partition type UUID*) se mijenja u "EFI System"
+- naredba ```mkpart rootfs ext4 129MiB 100%``` stvara particiju s imenom "rootfs", s pomakom 129 MiB od početka diska pa do 100 % ostatka slobodnog prostora, postavlja vrstu particije (*partition type UUID*) u "Linux filesystem"
+
+Informacije o particioniranom virtualnom disku odnosno sadržaju datoteke moguće je vidjeti naredbom:
+
+```
+parted -s disk.img print
+```
+
+Sve ovo je moguće napraviti i alatom ```fdisk``` (osim postavljanja imena particijama). Kako bi formatirali i montirali particije, virtualnom disku odnosno datoteci potrebno je pristupiti kao blok uređaju (kao disku). To se može napraviti tako što se datoteka poveže s prvim slobodnim *loop* uređajem kojeg Linux jezgra nudi naredbom ```losetup```. Dakle, potrebno je izvršiti naredbu:
+
+```
+sudo losetup -f -P --show disk.img
+```
+
+Opcija ```-f``` potražit će prvi slobodni *loop* uređaj na kojem je moguće povezati datoteku, a opcija ```--show``` će ispisati koji se točno uređaj povezao s datotekom, opcija ```-P``` će pretražiti postoje li neke particije u toj datoteci.
+
+Ako se izvrši naredba ```lsblk```, trebao bi se uočiti pseudouređaj ```/dev/loop0``` i njegove dvije particije ```/dev/loop0p1``` i ```/dev/loop0p2``` što su upravo particije stvorene prethodnim koracima. Ako postoji više *loop* uređaja datoteke koje su povezane s njima mogu se vidjeti naredbom:
+
+```
+sudo losetup -a
+```
+
+Stvaranje datotečnih sustava nad particijama blok pseudouređaja je jednostavno, kao i kod pravih blok uređaja. Primjerice, ako je dodijeljeni pseudouređaj bio ```/dev/loop0```, a particije ```/dev/loop0p1``` i ```/dev/loop0p2```, naredbe za formatiranje prve particije kao FAT32, a druge particije kao EXT4 su:
+
+```
+sudo mkfs.vfat -F 32 /dev/loop0p1
+sudo mkfs.ext4 /dev/loop0p2
+```
+
+Montiranje datotečnih sustava je također jednostavno. Kao primjer, potrebno je stvoriti prazne direktorij ```mnt-esp``` i ```mnt-rootfs```:
+
+```
+mkdir mnt-esp
+mkdir mnt-rootfs
+```
+
+Ako je dodijeljeni uređaj ```/dev/loop0```, montiranje prve particije na ```mnt-esp``` i druge particije na ```mnt-rootfs``` moguće je naredbama:
+
+```
+sudo mount /dev/loop0p1 mnt-esp
+sudo mount /dev/loop0p2 mnt-rootfs
+```
+
+Sada je moguće pisati i čitati s montiranih particija. Za demontiranje particija koriste se naredbe:
+
+```
+sudo umount mnt-esp
+sudo umount mnt-rootfs
+```
+
+Ili naredbe ```sudo umount /dev/loop0p1``` i ```sudo umount /dev/loop0p2```. Za odvajanje datoteke od pseudouređaja (primjerice pseudouređaj ```/dev/loop0```) koristi se naredba:
+
+```
+sudo losetup -d /dev/loop0
+```
+
 ## Pokretanje virtualnog stroja u BIOS načinu rada
 
 Kao primjer emulirat će se x86_64 sustav na x86_64 uz korištenje KVM značajke. Za instalaciju operacijskog sustava na virtualni tvrdi disk potrebno je preuzeti odgovarajuću ISO datoteku (primjerice Arch Linux ISO datoteku). Naredba ```qemu-system-x86_64``` nudi mnogo opcija i one se mogu vidjeti zastavicom ```--help```.
