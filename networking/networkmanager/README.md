@@ -158,3 +158,80 @@ sudo nmcli connection modify [ime profila konekcije ili UUID profila konekcije] 
 Kao i u prethodnim primjerima, potrebno je deaktivirati i ponovno aktivirati profil konekcije.
 
 Vraćanje inicijalnih postavki radi se naredbom ```sudo nmcli connection modify [ime profila konekcije ili UUID profila konekcije] ipv4.addresses "" ipv4.gateway "" ipv4.dns "" ipv4.method auto```.
+
+### Konfiguracija računala kao usmjernika
+
+Prije konfiguracije, potrebno je instalirati [```dnsmasq``` DHCP i DNS poslužitelj](https://wiki.archlinux.org/title/NetworkManager#dnsmasq) i postavit ga kao temeljni DHCP i DNS poslužitelj NetworkManageru. Instalacija se na Arch Linuxu izvršava naredbom:
+
+```
+sudo pacman -S dnsmasq
+```
+
+Za Debian Linux naredba za instalaciju je:
+
+```
+sudo apt install dnsmasq
+```
+
+Ako servis *dnsmasq* nije zaustavljen ili onemogućen, potrebno je to napraviti naredbama:
+
+```
+sudo systemctl stop dnsmasq
+sudo systemctl disable dnsmasq
+```
+
+Postavljanje *dnsmasq* kao DHCP i DNS poslužitelja NetworkManageru radi se tako što se stvori datoteka ```/etc/NetworkManager/conf.d/dns.conf``` i u nju se postavi sadržaj:
+
+```
+[main]
+dns=dnsmasq
+```
+
+Ponovno učitavanje NetworkManager konfiguracije radi se naredbom:
+
+```
+sudo nmcli general reload
+```
+
+U slučaju da je računalo potrebno konfigurirati kao usmjernik gdje bi se usmjeravao promet s jednog sučelja na trenutačni *gateway*, to bi se moglo napraviti na sljedeći način izvršavajući naredbu:
+
+```
+nmcli connection add type ethernet ifname [ime Ethernet sučelja] con-name [ime konekcije] ipv4.method shared
+```
+
+DHCP poslužitelj će dodijeliti priključenom uređaju jednu od adresa iz podmreže 10.42.x.0/24. Ako bi se želio koristiti vlastiti raspon adresa, to se može napraviti naredbom:
+
+```
+nmcli connection modify [ime konekcije] ipv4.addresses [adresa koja će se dodijeliti sučelju/maska]
+```
+
+Ako se želi automatski pokrenuti profil kada se fizički Ethernet sučelje spoji:
+
+```
+nmcli connection modify [ime konekcije] connection.autoconnect yes
+```
+
+Kao jedna naredba:
+
+```
+nmcli connection add type ethernet ifname [ime Ethernet sučelja] con-name [ime konekcije] ipv4.method shared ipv4.addresses [adresa/maska] connection.autoconnect yes
+```
+
+Primjena profila radi se naredbom:
+
+```
+nmcli connection up [ime konekcije]
+```
+
+Ono što se zapravo dogodi (u većini distribucija) je sljedeće:
+- dodjeljuje se statička IP adresa ciljanom sučelju
+- započinje se instanca *dnsmasq* DHCP i DNS poslužitelja za ciljano sučelje
+- omogućuje se IP prosljeđivanje u Linux jezgri (naredba ```sysctl -w  net.ipv4.ip_forward=1```)
+- konfigurira se uz pomoć *iptables* opcija maskiranja (*eng. masquerading*) za NAT (*eng. Network Address Translation*) ili novije *nftables*
+
+Prilikom spajanja uređaja na Ethernet priključak, dodijeljena IP adresa mu se može vidjeti naredbom:
+
+```
+ip neighbour show dev [ime Ethernet sučelja]
+```
+
