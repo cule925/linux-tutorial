@@ -256,6 +256,18 @@ ct:
 
 Nakon svakog primjera potrebno je izbrisati konfiguraciju naredbom ```nft flush ruleset```.
 
+**NAPOMENA: U slučaju da se koristi NetworkManager, mogu se dogoditi konflikti u postavkama jer NetworkManager isto upravlja s nftablesima.** Najbolje je zaustaviti NetworkManager servis (ako se ne koristi Wi-Fi) ili na trenutak onemogućiti NetworkManager upravljanje na sučeljima za koja se pišu pravila:
+
+```
+nmcli device set [ime sučelja] managed no
+```
+
+Ponovno omogućivanje upravljanja radi se naredbom:
+
+```
+nmcli device set [ime sučelja] managed yes
+```
+
 ### Primjer vatrozida
 
 #### Primjer 1 - dozvoli TCP promet na portovima 80 i 443
@@ -269,7 +281,7 @@ nft add table inet my_filter
 Zatim je potrebno dodati lanac imena *my_filter_input* vrste *filter* prioriteta 0 na *hook* *input* s politikom *drop*:
 
 ```
-nft add chain inet my_filter my_filter_input '{ type filter hook input priority 0; policy drop; }'
+nft add chain inet my_filter my_filter_input '{ type filter hook input priority filter; policy drop; }'
 ```
 
 Nakon izvršavanja prethodne naredbe svi paketi će biti odbačeni, čak i sa sučelja *localhost*. Da bi omogućili sav promet s *localhosta* odnosno *lo* sučelja, potrebno je dodati sljedeće pravilo:
@@ -292,6 +304,14 @@ nft add rule inet my_filter my_filter_input tcp dport {80,443} ct state new acce
 
 **NAPOMENA: Iako je UDP protokol za razliku od TCP protokola protokol bez stanja, nftables koristi praćenje UDP veze na temelju perioda i parametara paketa. Dakle, isto se preporučuje koristiti new, established i related stanja.**
 
+##### Vraćanje računala na izvorne postavke
+
+Potrebno je ukloniti *nftables* tablicu *my_filter* sa svim lancima i pravilima:
+
+```
+nft delete table inet my_filter
+```
+
 #### Primjer 2 - odbaci sve pakete s podmreže 10.0.40.0/24
 
 Prvo je potrebno dodati tablicu imena *my_filter* vrste *inet* (IPv4 + IPv6):
@@ -303,13 +323,13 @@ nft add table inet my_filter
 Zatim je potrebno dodati lanac imena *my_filter_input* vrste *filter* prioriteta 0 na *hook* *input* s politikom *accept*:
 
 ```
-nft add chain inet my_filter my_filter_input '{ type filter hook input priority 0; policy accept; }'
+nft add chain inet my_filter my_filter_input '{ type filter hook input priority filter; policy accept; }'
 ```
 
 Onda je potrebno dodati lanac imena *my_filter_input* vrste *filter* prioriteta 0 na *hook* *output* s politikom *accept*:
 
 ```
-nft add chain inet my_filter my_filter_output '{ type filter hook output priority 0; policy accept; }'
+nft add chain inet my_filter my_filter_output '{ type filter hook output priority filter; policy accept; }'
 ```
 
 Nakon izvršavanja prethodnih naredbi potrebno je onemogućiti primanje paketa s podmreže 10.0.40.0/24 i onemogućiti slanje paketa u podmrežu 10.0.40.0/24
@@ -318,4 +338,134 @@ Nakon izvršavanja prethodnih naredbi potrebno je onemogućiti primanje paketa s
 nft add rule inet my_filter my_filter_input ip saddr 10.0.40.0/24 drop
 nft add rule inet my_filter my_filter_output ip daddr 10.0.40.0/24 drop
 ```
+
+##### Vraćanje računala na izvorne postavke
+
+Potrebno je ukloniti *nftables* tablicu *my_filter* sa svim lancima i pravilima:
+
+```
+nft delete table inet my_filter
+```
+
+### Primjer NAT-a
+
+#### Primjer 1 - računalo kao usmjernik koristeći NAT s DHCP poslužiteljem
+
+Može se uzeti računalo s dva mrežna sučelja *eth0* i *eth1* gdje je *eth0* spojen na usmjernik koji usmjerava na Internet. Cilj je usmjeravati promet sa sučelja *eth1* na *eth0* usput radeći mrežnu translaciju adresa (*eng. NAT - Network Address Translation*). Na sučelju će također prisluškivat DHCP poslužitelj (specifično *dnsmasq*) koji će dodjeljivati adrese podmreže 10.0.40.0/24.
+
+Prvo je potrebno utvrditi je li sučelje *eth0* odabran kao zadani *gateway* naredbom:
+
+```
+ip route show
+```
+
+Ako nije, potrebno ga je namjestiti kao *gateway* naredbom ```ip route add default via [IP adresa usmjernika prema Internetu] dev eth0```.
+
+Isto tako, ako se koristi NetworkManager, potrebno je onemogućiti pokretanje lokalnog DNS poslužitelja. Potrebno je u konfiguraciji (```/etc/NetworkManager/conf.d/dns.conf```) zakomentirati značajku DNS poslužitelja, primjerice ovako:
+
+```
+#dns=dnsmasq
+```
+
+Potrebno je ponovno pokrenuti NetworkManager naredbom ```systemctl restart NetworkManager```. Također, trebalo bi onemogućiti NetworkManageru upravljanje *eth1* sučeljem naredbom:
+
+```
+nmcli device set eth1 managed no
+```
+
+Nakon inicijalnih postavki, sada je potrebno dodati *nftables* tablicu *my_router* vrste *ip* (IPv4):
+
+```
+nft add table ip my_router
+```
+
+Zatim je potrebno dodati lanac imena *my_router_postrouting* vrste *nat* prioriteta 10 na *hook* *postrouting* s politikom *accept*:
+
+```
+nft add chain ip my_router my_router_postrouting '{ type nat hook postrouting priority srcnat; policy accept; }'
+```
+
+Onda je potrebno dodati lanac imena *my_router_forward* vrste *filter* prioriteta 0 na *hook* *forward* s politikom *accept*:
+
+```
+nft add chain ip my_router my_router_forward '{ type filter hook forward priority filter; policy accept; }'
+```
+
+Kod lanca *my_router_postrouting* potrebno je dodati sljedeća pravila:
+
+- kada izvorišna IP adresa pripada podmreži 10.0.40.0/24, a odredišna IP adresa ne pripada podmreži 10.0.40.0/24, radi se NAT maskiranje tako što se izvorišna IP adresa paketa na ulaznom sučelju zamijeni IP adresom izlaznog sučelja
+- u slučaju da odredišna IP adresa pripada podmreži 10.0.40.0/24 ne radi se NAT maskiranje jer je ulazno sučelje jednako izlaznom
+
+Dakle, naredba koju je potrebno izvesti je:
+
+```
+nft add rule ip my_router my_router_postrouting ip saddr 10.40.0.0/24 ip daddr != 10.40.0.0/24 masquerade
+```
+
+Paketima namijenjeni van podmreže 10.40.0.0/24 (oni koji su došli sa sučelja *eth1*) proslijedit će se na sučelje *eth0* (zadani *gateway*) i nakon toga će im se promijeniti izvorišna IP adresa iz neke adrese podmreže 10.0.40.0/24 u IP adresu sučelja *eth0*.
+
+Kod lanca *my_router_forward* potrebno je dodati sljedeća pravila:
+
+- prihvati prosljeđivanje paketa namijenjene za sučelje *eth1* čija je odredišna adresa dio podmreže 10.0.40.0/24
+- prihvati prosljeđivanje paketa sa sučelja *eth1* koje pripadaju postojećim konekcijama ili su na neki način povezani s konekcijama čija je izvorišna adresa dio podmreže 10.0.40.0/24
+- prihvati prosljeđivanje paketa sa sučelja *eth1* na *eth1*
+- odbij sve ostale pakete koji dolaze na sučelje *eth1*
+- odbij sve ostale pakete koji napuštaju sučelje *eth1*
+
+```
+nft add rule ip my_router my_router_forward ip daddr 10.40.0.0/24 oifname eth1 ct state established,related accept
+nft add rule ip my_router my_router_forward ip saddr 10.40.0.0/24 iifname eth1 accept
+nft add rule ip my_router my_router_forward iifname eth1 oifname eth1 accept
+nft add rule ip my_router my_router_forward iifname eth1 reject
+nft add rule ip my_router my_router_forward oifname eth1 reject
+```
+
+Nakon dodavanja pravila, sučelju *eth1* je potrebno postaviti IP adresu 10.40.0.1 (i ukloniti sve stare postavke) i pokrenuti DHCP poslužitelj naredbama. Međutim, ako NetworkManager pokreće za DNS *dnsmasq*, potrebno 
+
+```
+ip addr flush dev eth1
+ip addr add 10.40.0.1/24 dev eth1
+ip link set eth1 up
+dnsmasq --interface=eth1 --bind-interfaces --dhcp-range=10.40.0.2,10.40.0.254,255.255.255.0,12h
+```
+
+Zatim, potrebno je omogućiti Linux jezgri prosljeđivanje mrežnog prometa na računalu naredbom:
+
+```
+sysctl -w net.ipv4.ip_forward=1
+```
+
+##### Vraćanje računala na izvorne postavke
+
+Prvo je potrebno onemogućiti prosljeđivanje mrežnog prometa na računalu naredbom:
+
+```
+sysctl -w net.ipv4.ip_forward=0
+```
+
+Zatim je potrebno ubit proces *dnsmasq*, primjerice uz pomoć ```htop``` naredbe. Nakon toga, potrebno je ukloniti sve postavke sa sučelja *eth1*:
+
+```
+ip addr flush dev eth1
+```
+
+Onda je potrebno ukloniti *nftables* tablicu *my_router* sa svim lancima i pravilima:
+
+```
+nft delete table ip my_router
+```
+
+Nakon toga, potrebno je omogućiti NetworkManageru upravljanje sučeljem *eth1*:
+
+```
+nmcli device set eth1 managed yes
+```
+
+Konačno, potrebno je NetworkManageru omogućiti pokretanje lokalnog DNS poslužitelja odkomentiranjem prethodno zakomentirane direktive u konfiguraciji (```/etc/NetworkManager/conf.d/dns.conf```):
+
+```
+dns=dnsmasq
+```
+
+Za kraj potrebno je ponovno pokrenuti NetworkManager naredbom ```systemctl restart NetworkManager```.
 
