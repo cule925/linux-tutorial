@@ -4,21 +4,26 @@ Ovo su upute za Linux i mreže. Generalno, upute su sljedeće:
 
 * za upravljanje mrežnim konekcijama: [*networkmanager*](networkmanager)
 * za firewall: [*iptables*](iptables)
+* za firewall i NAT: [*nftables*](nftables)
 
 Tipični primjer lokalne mreže (*eng. LAN - Local Area Network*):
 
 ```
-                                                                     INTERNET
-                                                                        |
-             LAN                                                        |
-             +------------------+------------------+----------------+   |
-             |                  |                  |                |   |
-        +----+----+        +----+----+        +----+----+        +--+---+--+
-        | HOST A  |        | HOST B  |        | HOST C  |        | ROUTER  |
+                                        LAN
+
+                                    +----------+
+                  +-----------------|  SWITCH  |-----------------+
+                 /                  +----------+                  \
+                /                  /            \                  \
+               /                  /              \                  \
+              /                  /                \                  \
+             /                  /                  \                  \
+        +----+----+        +----+----+        +----+----+        +----+----+
+        | HOST A  |        | HOST B  |        | HOST C  |        | ROUTER  +----------- INTERNET
         +----+----+        +----+----+        +----+----+        +----+----+
 ```
 
-Uređaji koji su spojeni na lokalnu mrežu zovu se domaćini (*eng. hosts*) i pristupaju Internetu preko usmjernika (*eng. router*). Hostovi mogu biti povezani žičano ili bežično s usmjernikom. Podatci koji se prenose preko veze prenose se u paketima. Paketi se sastoje od zaglavlja (*eng. header*) i sadržaja odnosno podataka (*eng. payload*). Kada računalo šalje podatke nekom drugom računalu, mora se poštivati slijed protokola kako to napraviti. Takav slijed protokola definira se mrežnim stogom (*eng. Network Stack*) koji je apstraktni opis arhitekture mreže. Primjer mrežnog stoga je OSI model:
+Uređaji koji su spojeni na lokalnu mrežu preko preklopnika (*eng. switch*) zovu se domaćini (*eng. hosts*) i pristupaju Internetu preko usmjernika (*eng. router*). Podatci koji se prenose preko veza prenose se u paketima. Paketi se sastoje od zaglavlja (*eng. header*) i sadržaja odnosno podataka (*eng. payload*). Kada računalo šalje podatke nekom drugom računalu, mora se poštivati slijed protokola kako to napraviti. Takav slijed protokola definira se mrežnim stogom (*eng. Network Stack*) koji je apstraktni opis arhitekture mreže. Primjer mrežnog stoga je OSI model:
 
 ```
         +-------------------------------------------------------------------------------+
@@ -107,7 +112,7 @@ ip addr
 
 ### Tablica usmjeravanja
 
-Kako bi računalo komuniciralo s drugim računalima u lokalnoj mreži, ali i na Internetu, potrebna mu je tablica usmjeravanja. Ispis trenutačne tablice usmjeravanja može se napraviti naredbom:
+Kako bi računalo komuniciralo s drugim računalima na Internetu, potrebna mu je tablica usmjeravanja. Ispis trenutačne tablice usmjeravanja može se napraviti naredbom:
 
 ```
 route -n
@@ -156,7 +161,7 @@ DNS (*eng. Domain Name Service*) je protokol aplikacijskog sloja koji služi za 
 
 Tradicionalno, ako se nije uspjela razlučiti adresa u prethodnoj datoteci, slat će se upiti DNS poslužiteljima definirani u datoteci ```/etc/resolv.conf```.
 
-Moderni sustavi koriste ```systemd-resolved```, ```dnsmasq```, ```nscd``` i slične servise kako bi cacheirali DNS odgovore.
+Moderni sustavi koriste ```systemd-resolved```, ```dnsmasq```, ```nscd``` i slične servise kako bi *cacheirali* DNS odgovore.
 
 #### Multicast DNS (mDNS)
 
@@ -181,6 +186,64 @@ Procesi koji su pokretani s *root* ovlastima mogu prisluškivati od porta 1 do p
 ### DHCP postavke
 
 Gotovo svaka moderna lokalna mreža ima DHCP poslužitelj koji dinamički dodjeljuje IP adrese spojenim uređajima. Tu ulogu najčešće ima usmjernik. Ako se korist servis *NetworkManager*, on će automatski pozvati program ```dhclient``` kada na sučelje koje se spoji na neku mrežu. 
+
+Kada se računalo s automatskim izvršavanjem *dhclient* programa inicijalno spoji na lokalnu mrežu razmjena paketa teče ovako:
+
+- računalo šalje DHCPDISCOVER paket s odredišnom MAC *broadcast* adresom FF:FF:FF:FF:FF:FF i odredišnom IP *broadcast* adresom 255.255.255.255 (izvorišna MAC adresa je od računala, a izvorišna IP adresa je 0.0.0.0) - ovaj paket je upit za IP adresu poslužitelju
+- DHCP poslužitelj (primjerice usmjernik) odgovara na poruku slanjem DHCPOFFER paketom s odredišnom MAC adresom računala i odredišnom IP adresom koju je odlučio dodijeliti računalu, podatci u odgovoru sadrže općenite i dodatne informacije (primjerice IP adresu *gatewaya* i IP adrese DNS poslužitelja) - ovaj paket je ponuda računalu na upit
+- računalo šalje DHCPREQUEST paket s odredišnom MAC *broadcast* adresom FF:FF:FF:FF:FF:FF i odredišnom IP *broadcast* adresom 255.255.255.255 (izvorišna MAC adresa je od računala, a izvorišna IP adresa je 0.0.0.0) - ovaj paket je odgovor poslužitelju na ponudu
+- DHCP poslužitelj odgovara na odgovor na ponudu s potvrdom slanjem DHCPACK paketom s odredišnom MAC adresom računala i odredišnom IP adresom koju je odlučio dodijeliti računalu
+
+#### Statičko postavljanje IP adrese, gatewaya i DNS poslužitelja
+
+Ako se želi postaviti statička IP adresa bez DHCP na specifičnom sučelju, to je moguće napraviti IP naredbom. Za uspješnu povezanost potrebno je postaviti IP adresu sučelja, IP *gatewaya* i IP adresu DNS poslužitelja. Primjerice za subnet 10.0.0.0/24 s IP adresom 10.0.0.1 *gatewaya* te IP adresom 10.0.0.2 DNS poslužitelja možemo dodijeliti računalu statičku IP adresu 10.0.0.50 na sučelju *eth0* naredbama:
+
+```
+ip addr add 10.0.0.50/24 dev eth0
+ip link set eth0 up
+ip route add default via 10.0.0.1 dev eth0
+echo "nameserver 10.0.0.2" | tee /etc/resolv.conf
+```
+
+#### Promjena MAC adrese sučelja
+
+Ako se želi promijeniti MAC adresa mrežnog sučelja ako je to moguće od proizvođača ili upravljačkih programa potrebno je onemogućiti sučelje, postaviti adresu i ponovno omogućiti sučelje. Primjerice, ako se želi staviti MAC adresa 10:22:33:aa:bb:cc na sučelju *eth0*, to se može naredbama:
+
+```
+ip link set dev eth0 down
+ip link set dev eth0 address 10:22:33:aa:bb:cc
+ip link set dev eth0 up
+```
+
+Poslije ovoga je vrlo moguće potrebno ponovno postaviti IP adresu računala i *gatewaya*.
+
+#### Izlistavanje ARP tablice
+
+ARP (*eng. Address Resolution Protocol*) je mrežni protokol koji služi za mapiranje MAC adresa lokalnih uređaja na IP adrese istih uređaja. Računalo kojeg zanima MAC adresa ciljnog računala za kojeg zna IP adresu šalje *broadcast* ARP upit s odredišnom MAC adresom ff:ff:ff:ff:ff:ff ("Tko u lokalnoj mreži ima IP adresu ..."). Ciljno računalo šalje ARP odgovor koji sadrži MAC adresu ciljnog računala ("Ja imam tu IP adresu, moja MAC adresa je ..."). Računalo sprema MAC adresu u *cacheiranu* ARP tablicu.
+
+ARP tablice služe za lokalno usmjeravanje prometa. Ako neko računalo šalje pakete preko IP adrese na drugo računalo u lokalnoj mreži, on će namjestiti odredišnu MAC adresu ciljnog računala gledajući svoju ARP tablicu. Kada paketi budu poslani na mrežno sučelje prema mrežnom preklopniku (*eng. Switch*), preklopnik će direktno poslati pakete na ciljno računalo gledajući odredišnu MAC adresu. Na ovaj način se direktno izbjegava slanje paketa na usmjernik preko IP adrese ciljnog računala (odluka se donosi na temelju sloja podatkovne veze umjesto mrežnog sloja).
+
+Mrežni preklopnici imaju tablice rutiranja po MAC adresama, primjerice
+
+```
+        +-------+-------------------+
+        | iface |  MAC address of   |
+        |       | connected device  |
+        +-------+-------------------+
+        | eth0  | a0:11:11:11:11:11 |
+        | eth1  | b0:22:22:22:22:22 |
+        | eth2  | c0:33:33:33:33:33 |
+        | eth3  | d0:44:44:44:44:44 |
+        +-------+-------------------+
+```
+
+U primjeru, ako je računalo spojeno na *eth0* i on pošalje ciljom računalu koje je spojeno na *eth1* paket, izvorišna MAC adresa tog paketa biti a0:11:11:11:11:11, a odredišna b0:11:11:11:11:11. Preklopnik će proslijediti paket s *eth0* na *eth1* potpuno izbjegavajući usmjernik (koji je primjerice spojen na *eth3*).
+
+Općenito, na računalu se *cacheirana* ARP tablica može ispisati naredbom:
+
+```
+ip neighbour
+```
 
 ### Translacija adresa i portova
 
